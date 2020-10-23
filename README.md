@@ -12,7 +12,7 @@ A word about the current directory structure.
 
 Arduino-telemetrix is the Arduino server sketch, and telemetrix-aio is the python client.
 
-The API may be found [here.](https://htmlpreview.github.com/?https://github.com/MrYsLab/telemetrix-aio/blob/master/html/index.html) 
+The API may be found [here.](https://htmlpreview.github.com/?https://github.com/MrYsLab/telemetrix-aio/blob/master/html/telemetrix_aio/index.html) 
 
 If you find bugs or would like to comment on the features, please enter an issue
  [here.](https://github.com/MrYsLab/telemetrix-aio/issues)
