@@ -32,7 +32,7 @@ class TelemetrixAioSerial:
     It provides a 'futures' interface to make Pyserial compatible with asyncio
     """
 
-    def __init__(self, com_port='/dev/ttyACM0', baud_rate=115200, sleep_tune=.001,
+    def __init__(self, com_port='/dev/ttyACM0', baud_rate=115200, sleep_tune=.0001,
                  telemetrix_aio_instance=None, close_loop_on_error=True):
 
         """
