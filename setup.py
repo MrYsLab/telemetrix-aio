@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='telemetrix-aio',
-    packages=['telemetrix-aio'],
+    packages=['telemetrix_aio'],
     install_requires=['pyserial'],
 
     version='0.1.0',
