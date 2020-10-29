@@ -8,7 +8,7 @@ setup(
     packages=['telemetrix_aio'],
     install_requires=['pyserial'],
 
-    version='0.1.0',
+    version='0.2.0',
     description="telemetrix-aio client and server",
 
     author='Alan Yorinks',
