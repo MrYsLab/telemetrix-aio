@@ -62,7 +62,7 @@ async def digital_in_pullup(my_board, pin):
      """
 
     # start monitoring the pin by setting its mode
-    await my_board.set_pin_mode_digital_input_pullup(pin, callback=the_callback)
+    await my_board.set_pin_mode_digital_input_pullup(pin, the_callback)
 
     # get pin changes forever
     while True:

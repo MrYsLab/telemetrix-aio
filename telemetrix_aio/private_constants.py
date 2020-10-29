@@ -37,6 +37,9 @@ class PrivateConstants:
     I2C_READ = 11
     I2C_WRITE = 12
     SONAR_NEW = 13
+    DHT_NEW = 14
+    STOP_ALL_REPORTS = 15
+    SET_ANALOG_SCANNING_INTERVAL = 16
 
     # reports
     # debug data from Arduino
@@ -49,9 +52,11 @@ class PrivateConstants:
     I2C_TOO_MANY_BYTES_RCVD = 9
     I2C_READ_REPORT = 10
     SONAR_DISTANCE = 11
+    DHT_REPORT = 12
+
     DEBUG_PRINT = 99
 
-    TELEMETRIX_AIO_VERSION = "0.01"
+    TELEMETRIX_AIO_VERSION = "0.02"
 
     # reporting control
     REPORTING_DISABLE_ALL = 0
@@ -78,3 +83,10 @@ class PrivateConstants:
 
     # maximum number of sonars allowed
     MAX_SONARS = 6
+
+    # maximum number of DHT devices allowed
+    MAX_DHTS = 6
+
+    # DHT Report sub-types
+    DHT_DATA = 0
+    DHT_ERROR = 1

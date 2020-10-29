@@ -60,15 +60,19 @@ async def analog_in(my_board, pin):
     and printed.
 
     Also, the differential parameter is being used.
-    The callback will only be called when there is
+    The callback will only be called when there is a
     difference of 5 or more between the current and
     last value reported.
+
+    The scan interval is set to 50 ms.
 
     :param my_board: a pymata_express instance
 
     :param pin: Arduino pin number
     """
-    await my_board.set_pin_mode_analog_input(pin, 5, the_callback)
+    await my_board.set_pin_mode_analog_input(pin, callback=the_callback, differential=5)
+    await my_board.set_analog_scan_interval(0)
+
     # run forever waiting for input changes
     try:
         while True:

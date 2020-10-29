@@ -65,7 +65,7 @@ async def digital_in(my_board, pin):
      """
 
     # set the pin mode
-    await my_board.set_pin_mode_digital_input(pin, callback=the_callback)
+    await my_board.set_pin_mode_digital_input(pin, the_callback)
 
     while True:
         try:
