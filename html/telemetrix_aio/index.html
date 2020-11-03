@@ -363,7 +363,7 @@ class TelemetrixAIO:
 
         :param pin: arduino pin number
 
-        :param value: pin value (1 or 0)
+        :param value: pin value (0-255)
 
         &#34;&#34;&#34;
         command = [PrivateConstants.ANALOG_WRITE, pin, value]
@@ -877,10 +877,7 @@ class TelemetrixAIO:
 
     async def enable_analog_reporting(self, pin):
         &#34;&#34;&#34;
-        Enables analog reporting. This is an alias for set_pin_mode_analog_input.
-        Disabling analog reporting sets the pin to a digital input pin,
-        so we need to provide the callback and differential if we wish
-        to specify it.
+        Enables analog reporting for the specified pin.
 
         :param pin: Analog pin number. For example for A0, the number is 0.
 
@@ -891,7 +888,7 @@ class TelemetrixAIO:
 
     async def enable_digital_reporting(self, pin):
         &#34;&#34;&#34;
-        Enable reporting on the digital pin.
+        Enable reporting on the specified digital pin.
 
         :param pin: Pin number.
         &#34;&#34;&#34;
@@ -1432,7 +1429,7 @@ error occurs</p></div>
 
         :param pin: arduino pin number
 
-        :param value: pin value (1 or 0)
+        :param value: pin value (0-255)
 
         &#34;&#34;&#34;
         command = [PrivateConstants.ANALOG_WRITE, pin, value]
@@ -1946,10 +1943,7 @@ error occurs</p></div>
 
     async def enable_analog_reporting(self, pin):
         &#34;&#34;&#34;
-        Enables analog reporting. This is an alias for set_pin_mode_analog_input.
-        Disabling analog reporting sets the pin to a digital input pin,
-        so we need to provide the callback and differential if we wish
-        to specify it.
+        Enables analog reporting for the specified pin.
 
         :param pin: Analog pin number. For example for A0, the number is 0.
 
@@ -1960,7 +1954,7 @@ error occurs</p></div>
 
     async def enable_digital_reporting(self, pin):
         &#34;&#34;&#34;
-        Enable reporting on the digital pin.
+        Enable reporting on the specified digital pin.
 
         :param pin: Pin number.
         &#34;&#34;&#34;
@@ -2176,7 +2170,7 @@ error occurs</p></div>
 <dd>
 <div class="desc"><p>Set the specified pin to the specified value.</p>
 <p>:param pin: arduino pin number</p>
-<p>:param value: pin value (1 or 0)</p></div>
+<p>:param value: pin value (0-255)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -2187,7 +2181,7 @@ error occurs</p></div>
 
     :param pin: arduino pin number
 
-    :param value: pin value (1 or 0)
+    :param value: pin value (0-255)
 
     &#34;&#34;&#34;
     command = [PrivateConstants.ANALOG_WRITE, pin, value]
@@ -2282,10 +2276,7 @@ error occurs</p></div>
 <span>async def <span class="ident">enable_analog_reporting</span></span>(<span>self, pin)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables analog reporting. This is an alias for set_pin_mode_analog_input.
-Disabling analog reporting sets the pin to a digital input pin,
-so we need to provide the callback and differential if we wish
-to specify it.</p>
+<div class="desc"><p>Enables analog reporting for the specified pin.</p>
 <p>:param pin: Analog pin number. For example for A0, the number is 0.</p></div>
 <details class="source">
 <summary>
@@ -2293,10 +2284,7 @@ to specify it.</p>
 </summary>
 <pre><code class="python">async def enable_analog_reporting(self, pin):
     &#34;&#34;&#34;
-    Enables analog reporting. This is an alias for set_pin_mode_analog_input.
-    Disabling analog reporting sets the pin to a digital input pin,
-    so we need to provide the callback and differential if we wish
-    to specify it.
+    Enables analog reporting for the specified pin.
 
     :param pin: Analog pin number. For example for A0, the number is 0.
 
@@ -2310,7 +2298,7 @@ to specify it.</p>
 <span>async def <span class="ident">enable_digital_reporting</span></span>(<span>self, pin)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enable reporting on the digital pin.</p>
+<div class="desc"><p>Enable reporting on the specified digital pin.</p>
 <p>:param pin: Pin number.</p></div>
 <details class="source">
 <summary>
@@ -2318,7 +2306,7 @@ to specify it.</p>
 </summary>
 <pre><code class="python">async def enable_digital_reporting(self, pin):
     &#34;&#34;&#34;
-    Enable reporting on the digital pin.
+    Enable reporting on the specified digital pin.
 
     :param pin: Pin number.
     &#34;&#34;&#34;
