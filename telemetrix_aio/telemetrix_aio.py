@@ -772,6 +772,14 @@ class TelemetrixAIO:
 
         await asyncio.sleep(.05)
 
+    async def servo_detach(self, pin_number):
+        """
+        Detach a servo for reuse
+        :param pin_number: attached pin
+        """
+        command = [PrivateConstants.SERVO_DETACH, pin_number]
+        await self._send_command(command)
+
     async def servo_write(self, pin_number, angle):
         """
 

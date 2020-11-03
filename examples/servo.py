@@ -45,6 +45,7 @@ async def servo(my_board, pin):
     await my_board.servo_write(pin, 90)
     await asyncio.sleep(1)
     await my_board.servo_write(pin, 180)
+    await my_board.servo_detach()
 
 loop = asyncio.get_event_loop()
 board = telemetrix_aio.TelemetrixAIO()
