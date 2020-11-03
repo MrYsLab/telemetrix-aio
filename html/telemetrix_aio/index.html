@@ -866,10 +866,10 @@ class TelemetrixAIO:
 
     async def disable_digital_reporting(self, pin):
         &#34;&#34;&#34;
-        Disables digital reporting. By turning reporting off for this pin,
-        Reporting is disabled for all 8 bits in the &#34;port&#34;
+        Disables digital reporting for a single digital pin
 
-        :param pin: Pin and all pins for this port
+
+        :param pin: pin number
 
         &#34;&#34;&#34;
         command = [PrivateConstants.MODIFY_REPORTING, PrivateConstants.REPORTING_DIGITAL_DISABLE, pin]
@@ -1935,10 +1935,10 @@ error occurs</p></div>
 
     async def disable_digital_reporting(self, pin):
         &#34;&#34;&#34;
-        Disables digital reporting. By turning reporting off for this pin,
-        Reporting is disabled for all 8 bits in the &#34;port&#34;
+        Disables digital reporting for a single digital pin
 
-        :param pin: Pin and all pins for this port
+
+        :param pin: pin number
 
         &#34;&#34;&#34;
         command = [PrivateConstants.MODIFY_REPORTING, PrivateConstants.REPORTING_DIGITAL_DISABLE, pin]
@@ -2260,19 +2260,18 @@ error occurs</p></div>
 <span>async def <span class="ident">disable_digital_reporting</span></span>(<span>self, pin)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Disables digital reporting. By turning reporting off for this pin,
-Reporting is disabled for all 8 bits in the "port"</p>
-<p>:param pin: Pin and all pins for this port</p></div>
+<div class="desc"><p>Disables digital reporting for a single digital pin</p>
+<p>:param pin: pin number</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">async def disable_digital_reporting(self, pin):
     &#34;&#34;&#34;
-    Disables digital reporting. By turning reporting off for this pin,
-    Reporting is disabled for all 8 bits in the &#34;port&#34;
+    Disables digital reporting for a single digital pin
 
-    :param pin: Pin and all pins for this port
+
+    :param pin: pin number
 
     &#34;&#34;&#34;
     command = [PrivateConstants.MODIFY_REPORTING, PrivateConstants.REPORTING_DIGITAL_DISABLE, pin]

@@ -825,10 +825,10 @@ class TelemetrixAIO:
 
     async def disable_digital_reporting(self, pin):
         """
-        Disables digital reporting. By turning reporting off for this pin,
-        Reporting is disabled for all 8 bits in the "port"
+        Disables digital reporting for a single digital pin
 
-        :param pin: Pin and all pins for this port
+
+        :param pin: pin number
 
         """
         command = [PrivateConstants.MODIFY_REPORTING, PrivateConstants.REPORTING_DIGITAL_DISABLE, pin]
