@@ -69,6 +69,12 @@ async def analog_in(my_board, pin):
     :param pin: Arduino pin number
     """
     await my_board.set_pin_mode_analog_input(pin, 5, the_callback)
+
+    # await asyncio.sleep(5)
+    # await my_board.disable_analog_reporting()
+    # await asyncio.sleep(5)
+    # await my_board.enable_analog_reporting()
+
     # run forever waiting for input changes
     try:
         while True:
