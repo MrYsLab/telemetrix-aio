@@ -67,6 +67,16 @@ async def digital_in(my_board, pin):
     # set the pin mode
     await my_board.set_pin_mode_digital_input(pin, the_callback)
 
+    # uncomment to try out report enable/disable
+    # await asyncio.sleep(1)
+    # await my_board.disable_all_reporting()
+    # await asyncio.sleep(4)
+    # await my_board.enable_digital_reporting(12)
+
+    # await asyncio.sleep(3)
+    # await my_board.enable_digital_reporting(pin)
+    # await asyncio.sleep(1)
+
     while True:
         try:
             await asyncio.sleep(.001)
