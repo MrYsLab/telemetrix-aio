@@ -661,7 +661,7 @@ class TelemetrixAIO:
 
         if self.dht_count < PrivateConstants.MAX_DHTS - 1:
             self.dht_callbacks[pin] = callback
-            self.sonar_count += 1
+            self.dht_count += 1
 
             command = [PrivateConstants.DHT_NEW, pin]
             await self._send_command(command)
