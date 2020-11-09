@@ -10,7 +10,7 @@ setup(
     packages=['telemetrix_aio'],
     install_requires=['pyserial'],
 
-    version='0.2.0',
+    version='1.0',
     description="Remotely Control And Monitor Arduino-Core devices",
     long_description=long_description,
     long_description_content_type='text/markdown',
