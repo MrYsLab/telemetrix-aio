@@ -2,6 +2,8 @@
 
 from setuptools import setup
 
+with open('README.md') as f:
+    long_description = f.read()
 
 setup(
     name='telemetrix-aio',
@@ -9,7 +11,9 @@ setup(
     install_requires=['pyserial'],
 
     version='0.2.0',
-    description="telemetrix-aio client and server",
+    description="Remotely Control And Monitor Arduino-Core devices",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
 
     author='Alan Yorinks',
     author_email='MisterYsLab@gmail.com',
@@ -17,7 +21,7 @@ setup(
     download_url='https://github.com/MrYsLab/telemetrix-aio',
     keywords=['telemetrix', 'Arduino', 'Protocol', 'Python'],
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Other Environment',
         'Intended Audience :: Developers',
         'Intended Audience :: Education',

@@ -8,13 +8,12 @@ Python on the local client and an
 Arduino Core sketch, called 
 [Telemetrix4Arduino](https://github.com/MrYsLab/Telemetrix4Arduino) on the Microcontroller Unit (MCU). 
 
-Telemetrix-AIO is a Python asyncio client for the Telemetrix Project. A non-asyncio version may be found
- [here](https://github.com/MrYsLab/telemetrix).
-
 It is designed to be user extensible so that you may add support for sensors and actuators
 of your choosing.
 
+This client is a Python asyncio version. A non-asyncio version may be found
+ [here](https://github.com/MrYsLab/telemetrix).
+
 A [User's Guide](https://mryslab.github.io/telemetrix/) explaining installation and use is available online.
 
-A Python API for may be found [here.](https://htmlpreview.github.com/?https://github.com/MrYsLab/telemetrix-aio/blob/master/html/telemetrix_aio/index.html)
-
+A Python API for may be found [here.](http://htmlpreview.github.io/?https://github.com/MrYsLab/telemetrix-aio/blob/master/html/telemetrix_aio/index.html) 
