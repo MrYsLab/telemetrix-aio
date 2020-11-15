@@ -204,6 +204,8 @@ class TelemetrixAIO:
             print(f'Telemetrix4Arduino Version Number: {firmware_version[2]}.'
                   f'{firmware_version[3]}')
             # start the command dispatcher loop
+            command = [PrivateConstants.ENABLE_ALL_REPORTS]
+            await self._send_command(command)
             if not self.loop:
                 self.loop = asyncio.get_event_loop()
             self.the_task = self.loop.create_task(self._arduino_report_dispatcher())
@@ -805,6 +807,7 @@ class TelemetrixAIO:
             if self.serial_port:
                 command = [PrivateConstants.STOP_ALL_REPORTS]
                 await self._send_command(command)
+
                 time.sleep(.5)
 
                 await self.serial_port.reset_input_buffer()
