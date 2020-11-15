@@ -93,7 +93,7 @@ board = telemetrix_aio.TelemetrixAIO()
 
 try:
     # start the main function
-    loop.run_until_complete(analog_in(board, 2))
+    loop.run_until_complete(analog_in(board, ANALOG_PIN))
 except (KeyboardInterrupt, RuntimeError) as e:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)
