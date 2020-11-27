@@ -14,54 +14,52 @@
  along with this library; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
-
 import asyncio
 import sys
+
 from telemetrix_aio import telemetrix_aio
 
 """
-Loopback some data to assure that data can be sent and received between
-the Telemetrix client and arduino-telemetrix server.
+Setup a pin for digital output and output a signal
+and toggle the pin. Do this 4 times.
 """
 
+# some globals
+DIGITAL_PIN = 2  # arduino pin number
 
-async def the_callback(data):
+
+async def blink(my_board, pin):
     """
-    A callback function to report receive the looped back data
+    This function will to toggle a digital pin.
 
-    :param data: [looped back data]
+    :param my_board: an PymataExpress instance
+    :param pin: pin to be controlled
     """
-    print(f'Looped back: {chr(data[0])}')
 
+    # set the pin mode
+    await my_board.set_pin_mode_digital_output(pin)
 
-async def loop_back(my_board, loop_back_data):
-    """
-    This function will request that the supplied characters be
-    sent to the board and looped back and printed out to the console.
+    # toggle the pin 4 times and exit
+    for x in range(4):
+        print('ON')
+        await my_board.digital_write(pin, 0)
+        await asyncio.sleep(1)
+        print('OFF')
+        await my_board.digital_write(pin, 1)
+        await asyncio.sleep(1)
 
-    :param my_board: a pymata4 instance
-    :param loop_back_data: A list of characters to have looped back
-    """
-    try:
-        for data in loop_back_data:
-            await my_board.loop_back(data, callback=the_callback)
-            print(f'Sending: {data}')
-            await asyncio.sleep(.1)
-    except KeyboardInterrupt:
-        my_board.shutdown()
-        sys.exit(0)
 
 # get the event loop
 loop = asyncio.get_event_loop()
 
 # instantiate pymata_express
-board = telemetrix_aio.TelemetrixAIO()
-char_list = ['A', 'B', 'Z']
+board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.220')
+
 try:
     # start the main function
-    loop.run_until_complete(loop_back(board, char_list))
+    loop.run_until_complete(blink(board, DIGITAL_PIN))
     loop.run_until_complete(board.shutdown())
+
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)
-

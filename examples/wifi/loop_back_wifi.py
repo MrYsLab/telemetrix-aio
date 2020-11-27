@@ -46,7 +46,7 @@ async def loop_back(my_board, loop_back_data):
         for data in loop_back_data:
             await my_board.loop_back(data, callback=the_callback)
             print(f'Sending: {data}')
-            await asyncio.sleep(.1)
+            await asyncio.sleep(1)
     except KeyboardInterrupt:
         my_board.shutdown()
         sys.exit(0)
@@ -55,12 +55,13 @@ async def loop_back(my_board, loop_back_data):
 loop = asyncio.get_event_loop()
 
 # instantiate pymata_express
-board = telemetrix_aio.TelemetrixAIO()
+board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.220')
 char_list = ['A', 'B', 'Z']
 try:
     # start the main function
     loop.run_until_complete(loop_back(board, char_list))
     loop.run_until_complete(board.shutdown())
+
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)

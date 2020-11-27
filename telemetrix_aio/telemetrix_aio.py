@@ -16,6 +16,7 @@
 """
 
 import asyncio
+import socket
 import struct
 import sys
 import time
@@ -26,6 +27,7 @@ from serial.serialutil import SerialException
 
 from telemetrix_aio.private_constants import PrivateConstants
 from telemetrix_aio.telemtrix_aio_serial import TelemetrixAioSerial
+from telemetrix_aio.telemetrix_aio_socket import TelemetrixAioSocket
 
 
 class TelemetrixAIO:
@@ -42,7 +44,8 @@ class TelemetrixAIO:
                  sleep_tune=0.0001, autostart=True,
                  loop=None, shutdown_on_exception=True,
                  close_loop_on_shutdown=True,
-                 ):
+                 ip_address=None, ip_port=31335):
+
         """
         If you have a single Arduino connected to your computer,
         then you may accept all the default values.
@@ -88,6 +91,11 @@ class TelemetrixAIO:
         self.arduino_wait = arduino_wait
         self.sleep_tune = sleep_tune
         self.autostart = autostart
+        self.ip_address = ip_address
+        self.ip_port = ip_port
+
+        # if tcp, this variable is set to the connected socket
+        self.sock = None
 
         # set the event loop
         if loop is None:
@@ -164,29 +172,37 @@ class TelemetrixAIO:
         an asyncio function.
          """
 
-        if not self.com_port:
-            # user did not specify a com_port
-            try:
-                await self._find_arduino()
-            except KeyboardInterrupt:
+        if not self.ip_address:
+            if not self.com_port:
+                # user did not specify a com_port
+                try:
+                    await self._find_arduino()
+                except KeyboardInterrupt:
+                    if self.shutdown_on_exception:
+                        await self.shutdown()
+            else:
+                # com_port specified - set com_port and baud rate
+                try:
+                    await self._manual_open()
+                except KeyboardInterrupt:
+                    if self.shutdown_on_exception:
+                        await self.shutdown()
+
+            if self.com_port:
+                print(f'Telemetrix4AIO found and connected to {self.com_port}')
+
+                # no com_port found - raise a runtime exception
+            else:
                 if self.shutdown_on_exception:
                     await self.shutdown()
+                raise RuntimeError('No Arduino Found or User Aborted Program')
+        # using tcp/ip
         else:
-            # com_port specified - set com_port and baud rate
-            try:
-                await self._manual_open()
-            except KeyboardInterrupt:
-                if self.shutdown_on_exception:
-                    await self.shutdown()
-
-        if self.com_port:
-            print(f'Telemetrix4AIO found and connected to {self.com_port}')
-
-            # no com_port found - raise a runtime exception
-        else:
-            if self.shutdown_on_exception:
-                await self.shutdown()
-            raise RuntimeError('No Arduino Found or User Aborted Program')
+            self.sock = TelemetrixAioSocket(self.ip_address, self.ip_port, self.loop)
+            await self.sock.start()
+            # self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # self.sock.connect((self.ip_address, self.ip_port))
+            # print(f'Successfully connected to: {self.ip_address}:{self.ip_port}')
 
         # get arduino firmware version and print it
         firmware_version = await self._get_firmware_version()
@@ -236,7 +252,7 @@ class TelemetrixAIO:
         for port in the_ports_list:
             if port.pid is None:
                 continue
-            # print('\nChecking {}'.format(port.device))
+            print('\nChecking {}'.format(port.device))
             try:
                 self.serial_port = TelemetrixAioSerial(port.device, 115200,
                                                        telemetrix_aio_instance=self,
@@ -315,7 +331,10 @@ class TelemetrixAIO:
         await self._send_command(command)
         # provide time for the reply
         await asyncio.sleep(.1)
-        firmware_version = await self.serial_port.read(6)
+        if not self.ip_address:
+            firmware_version = await self.serial_port.read(4)
+        else:
+            firmware_version = list(await self.sock.read(4))
         return firmware_version
 
     async def analog_write(self, pin, value):
@@ -324,10 +343,12 @@ class TelemetrixAIO:
 
         :param pin: arduino pin number
 
-        :param value: pin value (0-255)
+        :param value: pin value (maximum 16 bits)
 
         """
-        command = [PrivateConstants.ANALOG_WRITE, pin, value]
+        value_msb = value >> 8
+        value_lsb = value & 0xff
+        command = [PrivateConstants.ANALOG_WRITE, pin, value_msb, value_lsb]
         await self._send_command(command)
 
     async def digital_write(self, pin, value):
@@ -814,6 +835,13 @@ class TelemetrixAIO:
                 await self.serial_port.close()
                 if self.close_loop_on_shutdown:
                     self.loop.stop()
+            elif self.sock:
+                command = [PrivateConstants.STOP_ALL_REPORTS]
+                await self._send_command(command)
+                self.the_task.cancel()
+                time.sleep(.5)
+                if self.close_loop_on_shutdown:
+                    self.loop.stop()
         except (RuntimeError, SerialException):
             pass
 
@@ -883,12 +911,20 @@ class TelemetrixAIO:
             if self.shutdown_flag:
                 break
             try:
-                packet_length = await self.serial_port.read()
+                if not self.ip_address:
+                    packet_length = await self.serial_port.read()
+                else:
+
+                    packet_length = ord(await self.sock.read())
+
             except TypeError:
                 continue
 
             # get the rest of the packet
-            packet = await self.serial_port.read(packet_length)
+            if not self.ip_address:
+                packet = await self.serial_port.read(packet_length)
+            else:
+                packet = list(await self.sock.read(packet_length))
 
             report = packet[0]
             # handle all other messages by looking them up in the
@@ -1082,4 +1118,8 @@ class TelemetrixAIO:
         # print(command)
         send_message = bytes(command)
 
-        await self.serial_port.write(send_message)
+        if not self.ip_address:
+            await self.serial_port.write(send_message)
+        else:
+            await self.sock.write(send_message)
+            # await asyncio.sleep(.1)
