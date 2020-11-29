@@ -10,6 +10,9 @@ Arduino Core sketch, called
 
 Telemetrix-AIO is a Python asyncio client for the Telemetrix Project. A non-asyncio version may be found
  [here](https://github.com/MrYsLab/telemetrix).
+ 
+In addition, WiFi is supported for the ESP8266 when used in conjunction with 
+[Telemetrix4Esp8266](https://github.com/MrYsLab/Telemetrix4Esp8266).
 
 It is designed to be user extensible so that you may add support for sensors and actuators
 of your choosing.
