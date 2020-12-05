@@ -6,7 +6,10 @@ collected data back to local receiving equipment for processing.
 The Telemetrix Project is a telemetry system explicitly designed for Arduino Core-based MCUs, using 
 Python on the local client and an 
 Arduino Core sketch, called 
-[Telemetrix4Arduino](https://github.com/MrYsLab/Telemetrix4Arduino) on the Microcontroller Unit (MCU). 
+[Telemetrix4Arduino](https://github.com/MrYsLab/Telemetrix4Arduino) on the Microcontroller Unit (MCU).
+
+In addition, WiFi is supported for the ESP8266 when used in conjunction with 
+[Telemetrix4Esp8266](https://github.com/MrYsLab/Telemetrix4Esp8266).
 
 Telemetrix-AIO is a Python asyncio client for the Telemetrix Project. A non-asyncio version may be found
  [here](https://github.com/MrYsLab/telemetrix).
