@@ -226,6 +226,10 @@ class TelemetrixAIO:
                 self.loop = asyncio.get_event_loop()
             self.the_task = self.loop.create_task(self._arduino_report_dispatcher())
 
+            # Have the server reset its data structures
+            command = [PrivateConstants.RESET]
+            await self._send_command(command)
+
     async def get_event_loop(self):
         """
         Return the currently active asyncio event loop
