@@ -19,5 +19,5 @@ of your choosing.
 
 A [User's Guide](https://mryslab.github.io/telemetrix/) explaining installation and use is available online.
 
-A Python API for may be found [here.](https://htmlpreview.github.com/?https://github.com/MrYsLab/telemetrix-aio/blob/master/html/telemetrix_aio/index.html)
+A Python API for may be found [here.](https://htmlpreview.github.io/?https://github.com/MrYsLab/telemetrix-aio/blob/master/html/telemetrix_aio/index.html)
 
