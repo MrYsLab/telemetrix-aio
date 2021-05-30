@@ -18,6 +18,7 @@
 import asyncio
 import sys
 import time
+
 from telemetrix_aio import telemetrix_aio
 
 """
@@ -57,7 +58,7 @@ async def the_callback(data):
     if data[1]:
         # error message
         date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[4]))
-        print(f'DHT Error Report:' 
+        print(f'DHT Error Report:'
               f'Pin: {data[2]} DHT Type: {data[3]} Error: {data[1]}  Time: {date}')
     else:
         date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[6]))
@@ -89,6 +90,7 @@ async def dht(my_board):
         except KeyboardInterrupt:
             my_board.shutdown()
             sys.exit(0)
+
 
 # get the event loop
 loop = asyncio.get_event_loop()
