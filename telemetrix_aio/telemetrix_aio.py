@@ -1,5 +1,5 @@
 """
- Copyright (c) 2020 Alan Yorinks All rights reserved.
+ Copyright (c) 2020-2021 Alan Yorinks All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
@@ -16,8 +16,8 @@
 """
 
 import asyncio
-import socket
-import struct
+# import socket
+# import struct
 import sys
 import time
 # noinspection PyPackageRequirements
@@ -25,11 +25,15 @@ from serial.tools import list_ports
 # noinspection PyPackageRequirementscd
 from serial.serialutil import SerialException
 
+# noinspection PyUnresolvedReferences
 from telemetrix_aio.private_constants import PrivateConstants
+# noinspection PyUnresolvedReferences
 from telemetrix_aio.telemtrix_aio_serial import TelemetrixAioSerial
+# noinspection PyUnresolvedReferences
 from telemetrix_aio.telemetrix_aio_socket import TelemetrixAioSocket
 
 
+# noinspection GrazieInspection,PyArgumentList,PyMethodMayBeStatic,PyRedundantParentheses
 class TelemetrixAIO:
     """
     This class exposes and implements the TelemetrixAIO API.
@@ -218,7 +222,7 @@ class TelemetrixAIO:
             raise RuntimeError
         else:
             print(f'Telemetrix4Arduino Version Number: {firmware_version[2]}.'
-                  f'{firmware_version[3]}')
+                  f'{firmware_version[3]}.{firmware_version[4]}')
             # start the command dispatcher loop
             command = [PrivateConstants.ENABLE_ALL_REPORTS]
             await self._send_command(command)
@@ -336,9 +340,9 @@ class TelemetrixAIO:
         # provide time for the reply
         await asyncio.sleep(.1)
         if not self.ip_address:
-            firmware_version = await self.serial_port.read(4)
+            firmware_version = await self.serial_port.read(5)
         else:
-            firmware_version = list(await self.sock.read(4))
+            firmware_version = list(await self.sock.read(5))
         return firmware_version
 
     async def analog_write(self, pin, value):
@@ -672,12 +676,20 @@ class TelemetrixAIO:
         command = [PrivateConstants.I2C_BEGIN, i2c_port]
         await self._send_command(command)
 
-    async def set_pin_mode_dht(self, pin, callback):
+    async def set_pin_mode_dht(self, pin, callback=None, dht_type=22):
         """
 
         :param pin: connection pin
 
         :param callback: callback function
+
+        :param dht_type: either 22 for DHT22 or 11 for DHT11
+
+        Error Callback: [DHT REPORT Type, DHT_ERROR_NUMBER, PIN, DHT_TYPE, Time]
+
+        Valid Data Callback: DHT REPORT Type, DHT_DATA=, PIN, DHT_TYPE, Humidity,
+        Temperature,
+        Time]
 
         """
 
@@ -690,7 +702,10 @@ class TelemetrixAIO:
             self.dht_callbacks[pin] = callback
             self.dht_count += 1
 
-            command = [PrivateConstants.DHT_NEW, pin]
+            if dht_type != 22 and dht_type != 11:
+                dht_type = 22
+
+            command = [PrivateConstants.DHT_NEW, pin, dht_type]
             await self._send_command(command)
         else:
             if self.shutdown_on_exception:
@@ -980,43 +995,50 @@ class TelemetrixAIO:
 
     async def _dht_report(self, data):
         """
-        This is a private message handler for dht addition errors
+        This is a private message handler for dht reports
 
-        :param data:    data[0] = report sub type - DHT_DATA or DHT_ERROR
+        :param data:            data[0] = report error return
+                                    No Errors = 0
 
-                        data[1] = pin number
+                                    Checksum Error = 1
 
-                        data[2] = humidity high order byte or error value if DHT_ERROR
+                                    Timeout Error = 2
 
-                        data[3] = humidity byte 2
+                                    Invalid Value = 999
 
-                        data[4] = humidity byte 3
+                                data[1] = pin number
 
-                        data[5] = humidity byte 4
+                                data[2] = dht type 11 or 22
 
-                        data[6] = temperature high order byte for data
+                                data[3] = humidity positivity flag
 
-                        data[7] = temperature byte 2
+                                data[4] = temperature positivity value
 
-                        data[8] = temperature byte 3
+                                data[5] = humidity integer
 
-                        data[9] = temperature byte 4
+                                data[6] = humidity fractional value
+
+                                data[7] = temperature integer
+
+                                data[8] = temperature fractional value
         """
-
-        if data[0]:
+        if data[0]:  # DHT_ERROR
             # error report
             # data[0] = report sub type, data[1] = pin, data[2] = error message
             if self.dht_callbacks[data[1]]:
+                # Callback 0=DHT REPORT, DHT_ERROR, PIN, Time
                 message = [PrivateConstants.DHT_REPORT, data[0], data[1], data[2], time.time()]
                 await self.dht_callbacks[data[1]](message)
         else:
-            # got valid data
-            f_humidity = bytearray(data[2:6])
-            f_temperature = bytearray(data[6:])
-            message = [PrivateConstants.DHT_REPORT, data[0], data[1],
-                       (struct.unpack('<f', f_humidity))[0],
-                       (struct.unpack('<f', f_temperature))[0],
-                       time.time()]
+            # got valid data DHT_DATA
+            f_humidity = float(data[5] + data[6] / 100)
+            if data[3]:
+                f_humidity *= -1.0
+            f_temperature = float(data[7] + data[8] / 100)
+            if data[4]:
+                f_temperature *= -1.0
+            message = [PrivateConstants.DHT_REPORT, data[0], data[1], data[2],
+                      f_humidity, f_temperature, time.time()]
 
             await self.dht_callbacks[data[1]](message)
 
