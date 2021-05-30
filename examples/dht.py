@@ -15,64 +15,80 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
 
+import asyncio
 import sys
 import time
-import asyncio
+
 from telemetrix_aio import telemetrix_aio
 
 """
-This program monitors a DHT 22 sensor. 
+This program monitors two DHT22 and two DHT11 sensors.
 """
 
+
 # indices into callback data for valid data
-REPORT_TYPE = 0
-PIN = 1
-HUMIDITY = 2
-TEMPERATURE = 3
-TIME = 4
+# REPORT_TYPE = 0
+# READ_RESULT = 1
+# PIN = 2
+# DHT_TYPE = 3
+# HUMIDITY = 4
+# TEMPERATURE = 5
+# TIME = 6
 
 # indices into callback data for error report
-REPORT_TYPE = 0
-PIN = 1
-ERROR_VALUE = 2
+# REPORT_TYPE = 0
+# READ_RESULT = 1
+# PIN = 2
+# DHT_TYPE = 3
+# TIME = 4
+
 
 # A callback function to display the distance
+# noinspection GrazieInspection
 async def the_callback(data):
+    # noinspection GrazieInspection
     """
-    The callback function to display the change in distance
-    :param data: [report_type = PrivateConstants.DHT, pin number, humidity, temperature timestamp]
-                 if this is an error report:
-                 [report_type = PrivateConstants.DHT, pin number, error value timestamp]
-    """
+        The callback function to display the change in distance
+        :param data: [report_type = PrivateConstants.DHT, error = 0, pin number,
+        dht_type, humidity, temperature timestamp]
+                     if this is an error report:
+                     [report_type = PrivateConstants.DHT, error != 0, pin number, dht_type
+                     timestamp]
+        """
     if data[1]:
         # error message
         date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[4]))
-        print(f'DHT Error Report:' 
-              f'Pin: {data[2]} Error: {data[3]}  Time: {date}')
+        print(f'DHT Error Report:'
+              f'Pin: {data[2]} DHT Type: {data[3]} Error: {data[1]}  Time: {date}')
     else:
-        date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[5]))
+        date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[6]))
         print(f'DHT Valid Data Report:'
-              f'Pin: {data[2]} Humidity: {data[3]} Temperature: {data[4]} Time: {date}')
+              f'Pin: {data[2]} DHT Type: {data[3]} Humidity: {data[4]} Temperature:'
+              f' {data[5]} Time: {date}')
 
 
-async def dht(my_board, pin, callback):
+async def dht(my_board):
+    # noinspection GrazieInspection
     """
-    Set the pin mode for a DHT 22 device. Results will appear via the
-    callback.
+        Set the pin mode for a DHT 22 device. Results will appear via the
+        callback.
 
-    :param my_board: an pymata express instance
-    :param pin: Arduino pin number
-    :param callback: The callback function
-    """
+        :param my_board: an pymata express instance
 
-    # set the pin mode for the trigger and echo pins
-    await my_board.set_pin_mode_dht(pin, callback)
-    # wait forever
+        """
+
+    # set the pin mode for the DHT devices
+    await my_board.set_pin_mode_dht(8, the_callback, 11)
+    await my_board.set_pin_mode_dht(9, the_callback, 22)
+    await my_board.set_pin_mode_dht(10, the_callback, 22)
+    await my_board.set_pin_mode_dht(11, the_callback, 11)
+
+    # just sit in a loop waiting for the reports to come in
     while True:
         try:
-            await asyncio.sleep(.01)
+            await asyncio.sleep(.001)
         except KeyboardInterrupt:
-            await my_board.shutdown()
+            my_board.shutdown()
             sys.exit(0)
 
 
@@ -81,10 +97,7 @@ loop = asyncio.get_event_loop()
 
 # instantiate pymata_express
 board = telemetrix_aio.TelemetrixAIO()
-
 try:
-    # start the main function
-    loop.run_until_complete(dht(board, 9, the_callback))
-except (KeyboardInterrupt, RuntimeError) as e:
+    loop.run_until_complete(dht(board))
+except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
-    sys.exit(0)

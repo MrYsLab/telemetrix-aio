@@ -1,5 +1,5 @@
 """
- Copyright (c) 2015-2019 Alan Yorinks All rights reserved.
+ Copyright (c) 2015-2021 Alan Yorinks All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
@@ -58,7 +58,7 @@ class PrivateConstants:
 
     DEBUG_PRINT = 99
 
-    TELEMETRIX_AIO_VERSION = "1.5"
+    TELEMETRIX_AIO_VERSION = "1.6"
 
     # reporting control
     REPORTING_DISABLE_ALL = 0

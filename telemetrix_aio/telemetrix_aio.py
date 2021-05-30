@@ -1,5 +1,5 @@
 """
- Copyright (c) 2020 Alan Yorinks All rights reserved.
+ Copyright (c) 2020-2021 Alan Yorinks All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
@@ -16,20 +16,25 @@
 """
 
 import asyncio
-import socket
-import struct
+# import socket
+# import struct
 import sys
 import time
-# noinspection PyPackageRequirements
-from serial.tools import list_ports
+
 # noinspection PyPackageRequirementscd
 from serial.serialutil import SerialException
+# noinspection PyPackageRequirements
+from serial.tools import list_ports
 
+# noinspection PyUnresolvedReferences
 from telemetrix_aio.private_constants import PrivateConstants
-from telemetrix_aio.telemtrix_aio_serial import TelemetrixAioSerial
+# noinspection PyUnresolvedReferences
 from telemetrix_aio.telemetrix_aio_socket import TelemetrixAioSocket
+# noinspection PyUnresolvedReferences
+from telemetrix_aio.telemtrix_aio_serial import TelemetrixAioSerial
 
 
+# noinspection GrazieInspection,PyArgumentList,PyMethodMayBeStatic,PyRedundantParentheses
 class TelemetrixAIO:
     """
     This class exposes and implements the TelemetrixAIO API.
@@ -142,15 +147,24 @@ class TelemetrixAIO:
         self.report_dispatch = {}
 
         # To add a command to the command dispatch table, append here.
-        self.report_dispatch.update({PrivateConstants.LOOP_COMMAND: self._report_loop_data})
-        self.report_dispatch.update({PrivateConstants.DEBUG_PRINT: self._report_debug_data})
-        self.report_dispatch.update({PrivateConstants.DIGITAL_REPORT: self._digital_message})
-        self.report_dispatch.update({PrivateConstants.ANALOG_REPORT: self._analog_message})
-        self.report_dispatch.update({PrivateConstants.SERVO_UNAVAILABLE: self._servo_unavailable})
-        self.report_dispatch.update({PrivateConstants.I2C_READ_REPORT: self._i2c_read_report})
-        self.report_dispatch.update({PrivateConstants.I2C_TOO_FEW_BYTES_RCVD: self._i2c_too_few})
-        self.report_dispatch.update({PrivateConstants.I2C_TOO_MANY_BYTES_RCVD: self._i2c_too_many})
-        self.report_dispatch.update({PrivateConstants.SONAR_DISTANCE: self._sonar_distance_report})
+        self.report_dispatch.update(
+            {PrivateConstants.LOOP_COMMAND: self._report_loop_data})
+        self.report_dispatch.update(
+            {PrivateConstants.DEBUG_PRINT: self._report_debug_data})
+        self.report_dispatch.update(
+            {PrivateConstants.DIGITAL_REPORT: self._digital_message})
+        self.report_dispatch.update(
+            {PrivateConstants.ANALOG_REPORT: self._analog_message})
+        self.report_dispatch.update(
+            {PrivateConstants.SERVO_UNAVAILABLE: self._servo_unavailable})
+        self.report_dispatch.update(
+            {PrivateConstants.I2C_READ_REPORT: self._i2c_read_report})
+        self.report_dispatch.update(
+            {PrivateConstants.I2C_TOO_FEW_BYTES_RCVD: self._i2c_too_few})
+        self.report_dispatch.update(
+            {PrivateConstants.I2C_TOO_MANY_BYTES_RCVD: self._i2c_too_many})
+        self.report_dispatch.update(
+            {PrivateConstants.SONAR_DISTANCE: self._sonar_distance_report})
         self.report_dispatch.update({PrivateConstants.DHT_REPORT: self._dht_report})
 
         print(f'TelemetrixAIO Version: {PrivateConstants.TELEMETRIX_AIO_VERSION}')
@@ -218,7 +232,7 @@ class TelemetrixAIO:
             raise RuntimeError
         else:
             print(f'Telemetrix4Arduino Version Number: {firmware_version[2]}.'
-                  f'{firmware_version[3]}')
+                  f'{firmware_version[3]}.{firmware_version[4]}')
             # start the command dispatcher loop
             command = [PrivateConstants.ENABLE_ALL_REPORTS]
             await self._send_command(command)
@@ -336,9 +350,9 @@ class TelemetrixAIO:
         # provide time for the reply
         await asyncio.sleep(.1)
         if not self.ip_address:
-            firmware_version = await self.serial_port.read(4)
+            firmware_version = await self.serial_port.read(5)
         else:
-            firmware_version = list(await self.sock.read(4))
+            firmware_version = list(await self.sock.read(5))
         return firmware_version
 
     async def analog_write(self, pin, value):
@@ -427,9 +441,11 @@ class TelemetrixAIO:
         if not callback:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('i2c_read_restart_transmission: A Callback must be specified')
+            raise RuntimeError(
+                'i2c_read_restart_transmission: A Callback must be specified')
 
-        await self._i2c_read_request(address, register, number_of_bytes, stop_transmission=False,
+        await self._i2c_read_request(address, register, number_of_bytes,
+                                     stop_transmission=False,
                                      callback=callback, i2c_port=i2c_port)
 
     async def _i2c_read_request(self, address, register, number_of_bytes,
@@ -456,13 +472,15 @@ class TelemetrixAIO:
             if not self.i2c_1_active:
                 if self.shutdown_on_exception:
                     await self.shutdown()
-                raise RuntimeError('I2C Read: set_pin_mode i2c never called for i2c port 1.')
+                raise RuntimeError(
+                    'I2C Read: set_pin_mode i2c never called for i2c port 1.')
 
         if i2c_port:
             if not self.i2c_2_active:
                 if self.shutdown_on_exception:
                     await self.shutdown()
-                raise RuntimeError('I2C Read: set_pin_mode i2c never called for i2c port 2.')
+                raise RuntimeError(
+                    'I2C Read: set_pin_mode i2c never called for i2c port 2.')
 
         if not callback:
             if self.shutdown_on_exception:
@@ -504,13 +522,15 @@ class TelemetrixAIO:
             if not self.i2c_1_active:
                 if self.shutdown_on_exception:
                     await self.shutdown()
-                raise RuntimeError('I2C Write: set_pin_mode i2c never called for i2c port 1.')
+                raise RuntimeError(
+                    'I2C Write: set_pin_mode i2c never called for i2c port 1.')
 
         if i2c_port:
             if not self.i2c_2_active:
                 if self.shutdown_on_exception:
                     await self.shutdown()
-                raise RuntimeError('I2C Write: set_pin_mode i2c never called for i2c port 2.')
+                raise RuntimeError(
+                    'I2C Write: set_pin_mode i2c never called for i2c port 2.')
 
         command = [PrivateConstants.I2C_WRITE, len(args), address, i2c_port]
 
@@ -576,7 +596,8 @@ class TelemetrixAIO:
         if not callback:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('set_pin_mode_analog_input: A callback function must be specified.')
+            raise RuntimeError(
+                'set_pin_mode_analog_input: A callback function must be specified.')
 
         await self._set_pin_mode(pin_number, PrivateConstants.AT_ANALOG,
                                  differential, callback=callback)
@@ -590,7 +611,8 @@ class TelemetrixAIO:
 
         """
 
-        await self._set_pin_mode(pin_number, PrivateConstants.AT_OUTPUT, differential=0, callback=None)
+        await self._set_pin_mode(pin_number, PrivateConstants.AT_OUTPUT, differential=0,
+                                 callback=None)
 
     async def set_pin_mode_digital_input(self, pin_number, callback):
         """
@@ -607,7 +629,8 @@ class TelemetrixAIO:
         The pin_type for digital input pins = 0
 
         """
-        await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT, differential=0, callback=callback)
+        await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT, differential=0,
+                                 callback=callback)
 
     async def set_pin_mode_digital_input_pullup(self, pin_number, callback):
         """
@@ -627,9 +650,11 @@ class TelemetrixAIO:
         if not callback:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('set_pin_mode_digital_input_pullup: A callback function must be specified.')
+            raise RuntimeError(
+                'set_pin_mode_digital_input_pullup: A callback function must be specified.')
 
-        await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT_PULLUP, differential=0, callback=callback)
+        await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT_PULLUP,
+                                 differential=0, callback=callback)
 
     async def set_pin_mode_digital_output(self, pin_number):
         """
@@ -638,7 +663,8 @@ class TelemetrixAIO:
         :param pin_number: arduino pin number
         """
 
-        await self._set_pin_mode(pin_number, PrivateConstants.AT_OUTPUT, differential=0, callback=None)
+        await self._set_pin_mode(pin_number, PrivateConstants.AT_OUTPUT, differential=0,
+                                 callback=None)
 
     # noinspection PyIncorrectDocstring
     async def set_pin_mode_i2c(self, i2c_port=0):
@@ -672,12 +698,20 @@ class TelemetrixAIO:
         command = [PrivateConstants.I2C_BEGIN, i2c_port]
         await self._send_command(command)
 
-    async def set_pin_mode_dht(self, pin, callback):
+    async def set_pin_mode_dht(self, pin, callback=None, dht_type=22):
         """
 
         :param pin: connection pin
 
         :param callback: callback function
+
+        :param dht_type: either 22 for DHT22 or 11 for DHT11
+
+        Error Callback: [DHT REPORT Type, DHT_ERROR_NUMBER, PIN, DHT_TYPE, Time]
+
+        Valid Data Callback: DHT REPORT Type, DHT_DATA=, PIN, DHT_TYPE, Humidity,
+        Temperature,
+        Time]
 
         """
 
@@ -690,12 +724,16 @@ class TelemetrixAIO:
             self.dht_callbacks[pin] = callback
             self.dht_count += 1
 
-            command = [PrivateConstants.DHT_NEW, pin]
+            if dht_type != 22 and dht_type != 11:
+                dht_type = 22
+
+            command = [PrivateConstants.DHT_NEW, pin, dht_type]
             await self._send_command(command)
         else:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError(f'Maximum Number Of DHTs Exceeded - set_pin_mode_dht fails for pin {pin}')
+            raise RuntimeError(
+                f'Maximum Number Of DHTs Exceeded - set_pin_mode_dht fails for pin {pin}')
 
     async def set_pin_mode_servo(self, pin_number, min_pulse=544, max_pulse=2400):
         """
@@ -742,7 +780,8 @@ class TelemetrixAIO:
         else:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError(f'Maximum Number Of Sonars Exceeded - set_pin_mode_sonar fails for pin {trigger_pin}')
+            raise RuntimeError(
+                f'Maximum Number Of Sonars Exceeded - set_pin_mode_sonar fails for pin {trigger_pin}')
 
     async def _set_pin_mode(self, pin_number, pin_state, differential, callback):
         """
@@ -778,16 +817,20 @@ class TelemetrixAIO:
                                      'pin state:', pin_state))
 
         if pin_state == PrivateConstants.AT_INPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number, PrivateConstants.AT_INPUT, 1]
+            command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                       PrivateConstants.AT_INPUT, 1]
 
         elif pin_state == PrivateConstants.AT_INPUT_PULLUP:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number, PrivateConstants.AT_INPUT_PULLUP, 1]
+            command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                       PrivateConstants.AT_INPUT_PULLUP, 1]
 
         elif pin_state == PrivateConstants.AT_OUTPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number, PrivateConstants.AT_OUTPUT]
+            command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                       PrivateConstants.AT_OUTPUT]
 
         elif pin_state == PrivateConstants.AT_ANALOG:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number, PrivateConstants.AT_ANALOG,
+            command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                       PrivateConstants.AT_ANALOG,
                        differential >> 8, differential & 0xff, 1]
         else:
             if self.shutdown_on_exception:
@@ -853,7 +896,8 @@ class TelemetrixAIO:
         """
         Disable reporting for all digital and analog input pins
         """
-        command = [PrivateConstants.MODIFY_REPORTING, PrivateConstants.REPORTING_DISABLE_ALL, 0]
+        command = [PrivateConstants.MODIFY_REPORTING,
+                   PrivateConstants.REPORTING_DISABLE_ALL, 0]
         await self._send_command(command)
 
     async def disable_analog_reporting(self, pin):
@@ -863,7 +907,8 @@ class TelemetrixAIO:
         :param pin: Analog pin number. For example for A0, the number is 0.
 
         """
-        command = [PrivateConstants.MODIFY_REPORTING, PrivateConstants.REPORTING_ANALOG_DISABLE, pin]
+        command = [PrivateConstants.MODIFY_REPORTING,
+                   PrivateConstants.REPORTING_ANALOG_DISABLE, pin]
         await self._send_command(command)
 
     async def disable_digital_reporting(self, pin):
@@ -874,7 +919,8 @@ class TelemetrixAIO:
         :param pin: pin number
 
         """
-        command = [PrivateConstants.MODIFY_REPORTING, PrivateConstants.REPORTING_DIGITAL_DISABLE, pin]
+        command = [PrivateConstants.MODIFY_REPORTING,
+                   PrivateConstants.REPORTING_DIGITAL_DISABLE, pin]
         await self._send_command(command)
 
     async def enable_analog_reporting(self, pin):
@@ -885,7 +931,8 @@ class TelemetrixAIO:
 
 
         """
-        command = [PrivateConstants.MODIFY_REPORTING, PrivateConstants.REPORTING_ANALOG_ENABLE, pin]
+        command = [PrivateConstants.MODIFY_REPORTING,
+                   PrivateConstants.REPORTING_ANALOG_ENABLE, pin]
         await self._send_command(command)
 
     async def enable_digital_reporting(self, pin):
@@ -895,7 +942,8 @@ class TelemetrixAIO:
         :param pin: Pin number.
         """
 
-        command = [PrivateConstants.MODIFY_REPORTING, PrivateConstants.REPORTING_DIGITAL_ENABLE, pin]
+        command = [PrivateConstants.MODIFY_REPORTING,
+                   PrivateConstants.REPORTING_DIGITAL_ENABLE, pin]
         await self._send_command(command)
 
     async def _arduino_report_dispatcher(self):
@@ -980,43 +1028,51 @@ class TelemetrixAIO:
 
     async def _dht_report(self, data):
         """
-        This is a private message handler for dht addition errors
+        This is a private message handler for dht reports
 
-        :param data:    data[0] = report sub type - DHT_DATA or DHT_ERROR
+        :param data:            data[0] = report error return
+                                    No Errors = 0
 
-                        data[1] = pin number
+                                    Checksum Error = 1
 
-                        data[2] = humidity high order byte or error value if DHT_ERROR
+                                    Timeout Error = 2
 
-                        data[3] = humidity byte 2
+                                    Invalid Value = 999
 
-                        data[4] = humidity byte 3
+                                data[1] = pin number
 
-                        data[5] = humidity byte 4
+                                data[2] = dht type 11 or 22
 
-                        data[6] = temperature high order byte for data
+                                data[3] = humidity positivity flag
 
-                        data[7] = temperature byte 2
+                                data[4] = temperature positivity value
 
-                        data[8] = temperature byte 3
+                                data[5] = humidity integer
 
-                        data[9] = temperature byte 4
+                                data[6] = humidity fractional value
+
+                                data[7] = temperature integer
+
+                                data[8] = temperature fractional value
         """
-
-        if data[0]:
+        if data[0]:  # DHT_ERROR
             # error report
             # data[0] = report sub type, data[1] = pin, data[2] = error message
             if self.dht_callbacks[data[1]]:
-                message = [PrivateConstants.DHT_REPORT, data[0], data[1], data[2], time.time()]
+                # Callback 0=DHT REPORT, DHT_ERROR, PIN, Time
+                message = [PrivateConstants.DHT_REPORT, data[0], data[1], data[2],
+                           time.time()]
                 await self.dht_callbacks[data[1]](message)
         else:
-            # got valid data
-            f_humidity = bytearray(data[2:6])
-            f_temperature = bytearray(data[6:])
-            message = [PrivateConstants.DHT_REPORT, data[0], data[1],
-                       (struct.unpack('<f', f_humidity))[0],
-                       (struct.unpack('<f', f_temperature))[0],
-                       time.time()]
+            # got valid data DHT_DATA
+            f_humidity = float(data[5] + data[6] / 100)
+            if data[3]:
+                f_humidity *= -1.0
+            f_temperature = float(data[7] + data[8] / 100)
+            if data[4]:
+                f_temperature *= -1.0
+            message = [PrivateConstants.DHT_REPORT, data[0], data[1], data[2],
+                       f_humidity, f_temperature, time.time()]
 
             await self.dht_callbacks[data[1]](message)
 
@@ -1044,7 +1100,8 @@ class TelemetrixAIO:
         """
         if self.shutdown_on_exception:
             await self.shutdown()
-        raise RuntimeError(f'Servo Attach For Pin {report[0]} Failed: No Available Servos')
+        raise RuntimeError(
+            f'Servo Attach For Pin {report[0]} Failed: No Available Servos')
 
     async def _i2c_read_report(self, data):
         """
@@ -1079,7 +1136,8 @@ class TelemetrixAIO:
         """
         if self.shutdown_on_exception:
             await self.shutdown()
-        raise RuntimeError(f'i2c too few bytes received from i2c port {data[0]} i2c address {data[1]}')
+        raise RuntimeError(
+            f'i2c too few bytes received from i2c port {data[0]} i2c address {data[1]}')
 
     async def _i2c_too_many(self, data):
         """
@@ -1089,7 +1147,8 @@ class TelemetrixAIO:
         """
         if self.shutdown_on_exception:
             await self.shutdown()
-        raise RuntimeError(f'i2c too many bytes received from i2c port {data[0]} i2c address {data[1]}')
+        raise RuntimeError(
+            f'i2c too many bytes received from i2c port {data[0]} i2c address {data[1]}')
 
     async def _sonar_distance_report(self, report):
         """
