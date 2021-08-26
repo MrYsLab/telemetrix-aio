@@ -87,7 +87,7 @@ class TelemetrixAIO:
                 if python_version[2] >= 3:
                     pass
             else:
-                raise RuntimeError("ERROR: Python 3.8.3 or greater is "
+                raise RuntimeError("ERROR: Python 3.7 or greater is "
                                    "required for use of this program.")
 
         # save input parameters
@@ -121,6 +121,10 @@ class TelemetrixAIO:
 
         self.i2c_1_active = False
         self.i2c_2_active = False
+
+        self.spi_callback = None
+
+        self.onewire_callback = None
 
         # debug loopback callback method
         self.loop_back_callback = None
@@ -166,6 +170,41 @@ class TelemetrixAIO:
         self.report_dispatch.update(
             {PrivateConstants.SONAR_DISTANCE: self._sonar_distance_report})
         self.report_dispatch.update({PrivateConstants.DHT_REPORT: self._dht_report})
+        self.report_dispatch.update(
+            {PrivateConstants.SPI_REPORT: self._spi_report})
+        self.report_dispatch.update(
+            {PrivateConstants.ONE_WIRE_REPORT: self._onewire_report})
+
+        # dictionaries to store the callbacks for each pin
+        self.analog_callbacks = {}
+
+        self.digital_callbacks = {}
+
+        self.i2c_callback = None
+        self.i2c_callback2 = None
+
+        self.i2c_1_active = False
+        self.i2c_2_active = False
+
+        self.spi_callback = None
+
+        self.onewire_callback = None
+
+        self.cs_pins_enabled = []
+
+        # flag to indicate if spi is initialized
+        self.spi_enabled = False
+
+        # flag to indicate if onewire is initialized
+        self.onewire_enabled = False
+
+        # the trigger pin will be the key to retrieve
+        # the callback for a specific HC-SR04
+        self.sonar_callbacks = {}
+
+        self.sonar_count = 0
+
+        self.dht_callbacks = {}
 
         print(f'TelemetrixAIO Version: {PrivateConstants.TELEMETRIX_AIO_VERSION}')
         print(f'Copyright (c) 2018-2020 Alan Yorinks All rights reserved.\n')
@@ -783,6 +822,366 @@ class TelemetrixAIO:
             raise RuntimeError(
                 f'Maximum Number Of Sonars Exceeded - set_pin_mode_sonar fails for pin {trigger_pin}')
 
+    async def set_pin_mode_spi(self, chip_select_list=None):
+        """
+        Specify the list of chip select pins.
+
+        Standard Arduino MISO, MOSI and CLK pins are used for the board in use.
+
+        Chip Select is any digital output capable pin.
+
+        :param chip_select_list: this is a list of pins to be used for chip select.
+                           The pins will be configured as output, and set to high
+                           ready to be used for chip select.
+                           NOTE: You must specify the chips select pins here!
+
+
+        command message: [command, number of cs pins, [cs pins...]]
+        """
+
+        if type(chip_select_list) != list:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('chip_select_list must be in the form of a list')
+        if not chip_select_list:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('Chip select pins were not specified')
+
+        self.spi_enabled = True
+
+        command = [PrivateConstants.SPI_INIT, len(chip_select_list)]
+
+        for pin in chip_select_list:
+            command.append(pin)
+            self.cs_pins_enabled.append(pin)
+        await self._send_command(command)
+
+    async def spi_cs_control(self, chip_select_pin, select):
+        """
+        Control an SPI chip select line
+        :param chip_select_pin: pin connected to CS
+
+        :param select: 0=select, 1=deselect
+        """
+        if not self.spi_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'spi_cs_control: SPI interface is not enabled.')
+
+        if chip_select_pin not in self.cs_pins_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'spi_cs_control: chip select pin never enabled.')
+        command = [PrivateConstants.SPI_CS_CONTROL, chip_select_pin, select]
+        await self._send_command(command)
+
+    async def spi_read_blocking(self, register_selection, number_of_bytes_to_read,
+                          call_back=None):
+        """
+        Read the specified number of bytes from the specified SPI port and
+        call the callback function with the reported data.
+
+        :param register_selection: Register to be selected for read.
+
+        :param number_of_bytes_to_read: Number of bytes to read
+
+        :param call_back: Required callback function to report spi data as a
+                   result of read command
+
+
+        callback returns a data list:
+        [SPI_READ_REPORT, count of data bytes read, data bytes, time-stamp]
+
+        SPI_READ_REPORT = 13
+
+        """
+
+        if not self.spi_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'spi_read_blocking: SPI interface is not enabled.')
+
+        if not call_back:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('spi_read_blocking: A Callback must be specified')
+
+        self.spi_callback = call_back
+
+        command = [PrivateConstants.SPI_READ_BLOCKING, number_of_bytes_to_read,
+                   register_selection]
+
+        await self._send_command(command)
+
+    async def spi_set_format(self, clock_divisor, bit_order, data_mode):
+        """
+        Configure how the SPI serializes and de-serializes data on the wire.
+
+        See Arduino SPI reference materials for details.
+
+        :param clock_divisor:
+
+        :param bit_order:
+
+                            LSBFIRST = 0
+
+                            MSBFIRST = 1 (default)
+
+        :param data_mode:
+
+                            SPI_MODE0 = 0x00 (default)
+
+                            SPI_MODE1  = 0x04
+
+                            SPI_MODE2 = 0x08
+
+                            SPI_MODE3 = 0x0C
+
+        """
+
+        if not self.spi_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'spi_set_format: SPI interface is not enabled.')
+
+        command = [PrivateConstants.SPI_SET_FORMAT, clock_divisor, bit_order,
+                   data_mode]
+        await self._send_command(command)
+
+    async def spi_write_blocking(self, bytes_to_write):
+        """
+        Write a list of bytes to the SPI device.
+
+        :param bytes_to_write: A list of bytes to write. This must
+                                be in the form of a list.
+
+        """
+
+        if not self.spi_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'spi_write_blocking: SPI interface is not enabled.')
+
+        if type(bytes_to_write) is not list:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('spi_write_blocking: bytes_to_write must be a list.')
+
+        command = [PrivateConstants.SPI_WRITE_BLOCKING, len(bytes_to_write)]
+
+        for data in bytes_to_write:
+            command.append(data)
+
+        await self._send_command(command)
+
+    async def set_pin_mode_one_wire(self, pin):
+        """
+        Initialize the one wire serial bus.
+
+        :param pin: Data pin connected to the OneWire device
+        """
+        self.onewire_enabled = True
+        command = [PrivateConstants.ONE_WIRE_INIT, pin]
+        await self._send_command(command)
+
+    async def onewire_reset(self, callback=None):
+        """
+        Reset the onewire device
+
+        :param callback: required  function to report reset result
+
+        callback returns a list:
+        [ReportType = 14, Report Subtype = 25, reset result byte,
+                        timestamp]
+        """
+        if not self.onewire_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'onewire_reset: OneWire interface is not enabled.')
+        if not callback:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('onewire_reset: A Callback must be specified')
+
+        self.onewire_callback = callback
+
+        command = [PrivateConstants.ONE_WIRE_RESET]
+        await self._send_command(command)
+
+    async def onewire_select(self, device_address):
+        """
+        Select a device based on its address
+        :param device_address: A bytearray of 8 bytes
+        """
+        if not self.onewire_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'onewire_select: OneWire interface is not enabled.')
+
+        if type(device_address) is not list:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('onewire_select: device address must be an array of 8 '
+                               'bytes.')
+
+        if len(device_address) != 8:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('onewire_select: device address must be an array of 8 '
+                               'bytes.')
+        command = [PrivateConstants.ONE_WIRE_SELECT]
+        for data in device_address:
+            command.append(data)
+        await self._send_command(command)
+
+    async def onewire_skip(self):
+        """
+        Skip the device selection. This only works if you have a
+        single device, but you can avoid searching and use this to
+        immediately access your device.
+        """
+        if not self.onewire_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'onewire_skip: OneWire interface is not enabled.')
+
+        command = [PrivateConstants.ONE_WIRE_SKIP]
+        await self._send_command(command)
+
+    async def onewire_write(self, data, power=0):
+        """
+        Write a byte to the onewire device. If 'power' is one
+        then the wire is held high at the end for
+        parasitically powered devices. You
+        are responsible for eventually de-powering it by calling
+        another read or write.
+
+        :param data: byte to write.
+        :param power: power control (see above)
+        """
+        if not self.onewire_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'onewire_write: OneWire interface is not enabled.')
+        if 0 < data < 255:
+            command = [PrivateConstants.ONE_WIRE_WRITE, data, power]
+            await self._send_command(command)
+        else:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('onewire_write: Data must be no larger than 255')
+
+    async def onewire_read(self, callback=None):
+        """
+        Read a byte from the onewire device
+        :param callback: required  function to report onewire data as a
+                   result of read command
+
+
+        callback returns a data list:
+        [ONEWIRE_REPORT, ONEWIRE_READ=29, data byte, time-stamp]
+
+        ONEWIRE_REPORT = 14
+        """
+        if not self.onewire_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'onewire_read: OneWire interface is not enabled.')
+
+        if not callback:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('onewire_read A Callback must be specified')
+
+        self.onewire_callback = callback
+
+        command = [PrivateConstants.ONE_WIRE_READ]
+        await self._send_command(command)
+
+    async def onewire_reset_search(self):
+        """
+        Begin a new search. The next use of search will begin at the first device
+        """
+
+        if not self.onewire_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'onewire_reset_search: OneWire interface is not '
+                               f'enabled.')
+        else:
+            command = [PrivateConstants.ONE_WIRE_RESET_SEARCH]
+            await self._send_command(command)
+
+    async def onewire_search(self, callback=None):
+        """
+        Search for the next device. The device address will returned in the callback.
+        If a device is found, the 8 byte address is contained in the callback.
+        If no more devices are found, the address returned contains all elements set
+        to 0xff.
+
+        :param callback: required  function to report a onewire device address
+
+        callback returns a data list:
+        [ONEWIRE_REPORT, ONEWIRE_SEARCH=31, 8 byte address, time-stamp]
+
+        ONEWIRE_REPORT = 14
+        """
+        if not self.onewire_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'onewire_search: OneWire interface is not enabled.')
+
+        if not callback:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('onewire_read A Callback must be specified')
+
+        self.onewire_callback = callback
+
+        command = [PrivateConstants.ONE_WIRE_SEARCH]
+        await self._send_command(command)
+
+    async def onewire_crc8(self, address_list, callback=None):
+        """
+        Compute a CRC check on an array of data.
+        :param address_list:
+
+        :param callback: required  function to report a onewire device address
+
+        callback returns a data list:
+        [ONEWIRE_REPORT, ONEWIRE_CRC8=32, CRC, time-stamp]
+
+        ONEWIRE_REPORT = 14
+
+        """
+
+        if not self.onewire_enabled:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(f'onewire_crc8: OneWire interface is not enabled.')
+
+        if not callback:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('onewire_crc8 A Callback must be specified')
+
+        if type(address_list) is not list:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('onewire_crc8: address list must be a list.')
+
+        self.onewire_callback = callback
+
+        address_length = len(address_list)
+
+        command = [PrivateConstants.ONE_WIRE_CRC8, address_length - 1]
+
+        for data in address_list:
+            command.append(data)
+
+        await self._send_command(command)
+
     async def _set_pin_mode(self, pin_number, pin_state, differential, callback):
         """
         A private method to set the various pin modes.
@@ -997,6 +1396,19 @@ class TelemetrixAIO:
         """
         if self.loop_back_callback:
             await self.loop_back_callback(data)
+
+    async def _spi_report(self, report):
+
+        cb_list = [PrivateConstants.SPI_REPORT, report[0]] + report[1:]
+
+        cb_list.append(time.time())
+
+        await self.spi_callback(cb_list)
+
+    async def _onewire_report(self, report):
+        cb_list = [PrivateConstants.ONE_WIRE_REPORT, report[0]] + report[1:]
+        cb_list.append(time.time())
+        await self.onewire_callback(cb_list)
 
     async def _report_debug_data(self, data):
         """
