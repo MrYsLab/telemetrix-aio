@@ -978,7 +978,8 @@ class TelemetrixAIO:
     async def set_pin_mode_one_wire(self, pin):
         """
         Initialize the one wire serial bus.
-        :param pin: Data pin used with the OneWire device
+
+        :param pin: Data pin connected to the OneWire device
         """
         self.onewire_enabled = True
         command = [PrivateConstants.ONE_WIRE_INIT, pin]

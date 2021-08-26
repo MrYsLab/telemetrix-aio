@@ -1021,7 +1021,8 @@ class TelemetrixAIO:
     async def set_pin_mode_one_wire(self, pin):
         &#34;&#34;&#34;
         Initialize the one wire serial bus.
-        :param pin: Data pin used with the OneWire device
+
+        :param pin: Data pin connected to the OneWire device
         &#34;&#34;&#34;
         self.onewire_enabled = True
         command = [PrivateConstants.ONE_WIRE_INIT, pin]
@@ -2623,7 +2624,8 @@ error occurs</p></div>
     async def set_pin_mode_one_wire(self, pin):
         &#34;&#34;&#34;
         Initialize the one wire serial bus.
-        :param pin: Data pin used with the OneWire device
+
+        :param pin: Data pin connected to the OneWire device
         &#34;&#34;&#34;
         self.onewire_enabled = True
         command = [PrivateConstants.ONE_WIRE_INIT, pin]
@@ -4257,8 +4259,8 @@ API.</p>
 <span>async def <span class="ident">set_pin_mode_one_wire</span></span>(<span>self, pin)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Initialize the one wire serial bus.
-:param pin: Data pin used with the OneWire device</p></div>
+<div class="desc"><p>Initialize the one wire serial bus.</p>
+<p>:param pin: Data pin connected to the OneWire device</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4266,7 +4268,8 @@ API.</p>
 <pre><code class="python">async def set_pin_mode_one_wire(self, pin):
     &#34;&#34;&#34;
     Initialize the one wire serial bus.
-    :param pin: Data pin used with the OneWire device
+
+    :param pin: Data pin connected to the OneWire device
     &#34;&#34;&#34;
     self.onewire_enabled = True
     command = [PrivateConstants.ONE_WIRE_INIT, pin]

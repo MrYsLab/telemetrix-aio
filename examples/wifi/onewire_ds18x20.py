@@ -224,11 +224,11 @@ async def onewire_example(the_board, data_pin):
 loop = asyncio.get_event_loop()
 
 # instantiate pymata_express
-board = telemetrix_aio.TelemetrixAIO()
+board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.112')
 
 try:
     # start the main function
-    loop.run_until_complete(onewire_example(board, 8))
+    loop.run_until_complete(onewire_example(board, 1))
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)
