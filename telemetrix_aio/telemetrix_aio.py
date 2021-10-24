@@ -1192,7 +1192,7 @@ class TelemetrixAIO:
                           servo_config()
                           For DHT   use: set_pin_mode_dht
 
-       :param differential: for analog inputs - threshold
+        :param differential: for analog inputs - threshold
                              value to be achieved for report to
                              be generated
 
@@ -1206,35 +1206,25 @@ class TelemetrixAIO:
             raise RuntimeError('_set_pin_mode: A Callback must be specified')
         else:
             if pin_state == PrivateConstants.AT_INPUT:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_INPUT, 1]
                 self.digital_callbacks[pin_number] = callback
             elif pin_state == PrivateConstants.AT_INPUT_PULLUP:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_INPUT_PULLUP, 1]
                 self.digital_callbacks[pin_number] = callback
             elif pin_state == PrivateConstants.AT_ANALOG:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_ANALOG,
+                           differential >> 8, differential & 0xff, 1]
                 self.analog_callbacks[pin_number] = callback
+            elif pin_state == PrivateConstants.AT_OUTPUT:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_OUTPUT, 1]
             else:
-                print('{} {}'.format('set_pin_mode: callback ignored for '
-                                     'pin state:', pin_state))
-
-        if pin_state == PrivateConstants.AT_INPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT, 1]
-
-        elif pin_state == PrivateConstants.AT_INPUT_PULLUP:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT_PULLUP, 1]
-
-        elif pin_state == PrivateConstants.AT_OUTPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_OUTPUT]
-
-        elif pin_state == PrivateConstants.AT_ANALOG:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_ANALOG,
-                       differential >> 8, differential & 0xff, 1]
-        else:
-            if self.shutdown_on_exception:
-                await self.shutdown()
-            raise RuntimeError('Unknown pin state')
+                if self.shutdown_on_exception:
+                    await self.shutdown()
+                raise RuntimeError('Unknown pin state')
 
         if command:
             await self._send_command(command)
