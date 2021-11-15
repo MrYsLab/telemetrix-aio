@@ -28,7 +28,6 @@ polling. Time stamps are provided in both "cooked" and raw form
 
 # Setup a pin for analog input and monitor its changes
 ANALOG_PIN = 2  # arduino pin number
-POLL_TIME = 5  # number of seconds between polls
 
 # Callback data indices
 CB_PIN_MODE = 0
