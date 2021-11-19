@@ -17,3 +17,18 @@ This client is a Python asyncio version. A non-asyncio version may be found
 A [User's Guide](https://mryslab.github.io/telemetrix/) explaining installation and use is available online.
 
 A Python API for may be found [here.](http://htmlpreview.github.io/?https://github.com/MrYsLab/telemetrix-aio/blob/master/html/telemetrix_aio/index.html) 
+
+The following functionality is implemented in this release:
+
+* Analog Input
+* Digital Input, Digital Input Pullup
+* PWM output
+* Loopback (for client/server link debugging)
+* I2C Support
+* SPI Support
+* OneWire Support
+* Servo Support
+* HC-SR04 Type Sonar Distance Sensor Support
+* DHT 11 and 22 Humidity/Temperature Sensor Support
+* AccelStepper Support
+* Feature Enable/Disable Support

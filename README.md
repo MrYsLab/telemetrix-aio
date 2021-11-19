@@ -33,3 +33,5 @@ The following functionality is implemented in this release:
 * Servo Support
 * HC-SR04 Type Sonar Distance Sensor Support
 * DHT 11 and 22 Humidity/Temperature Sensor Support
+* AccelStepper Support
+* Feature Enable/Disable Support
