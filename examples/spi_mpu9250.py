@@ -22,6 +22,7 @@ and gyro values and prints them to the screen.
 
 The processing of the data returned from the MPU9250 is done within 
 the callback functions.
+
 """
 
 import asyncio
@@ -29,10 +30,6 @@ import sys
 import time
 
 from telemetrix_aio import telemetrix_aio
-
-# Instantiate the TelemetrixRpiPico class accepting all default parameters.
-# board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.112')
-
 
 # Convenience values for the pins.
 # Note that the CS value is within a list
