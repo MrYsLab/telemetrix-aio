@@ -1429,11 +1429,19 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError('stepper_move_to: Invalid motor_id.')
 
+        if position < 0:
+            polarity = 1
+        else:
+            polarity = 0
+        position = abs(position)
+
         position_bytes = list(position.to_bytes(4, 'big', signed=True))
 
         command = [PrivateConstants.STEPPER_MOVE_TO, motor_id]
         for value in position_bytes:
             command.append(value)
+        command.append(polarity)
+
         await self._send_command(command)
 
     async def stepper_move(self, motor_id, relative_position):
@@ -1451,11 +1459,18 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError('stepper_move: Invalid motor_id.')
 
-        position_bytes = list(relative_position.to_bytes(4, 'big', signed=True))
+        if relative_position < 0:
+            polarity = 1
+        else:
+            polarity = 0
+        position = abs(relative_position)
+
+        position_bytes = list(position.to_bytes(4, 'big', signed=True))
 
         command = [PrivateConstants.STEPPER_MOVE, motor_id]
         for value in position_bytes:
             command.append(value)
+        command.append(polarity)
         await self._send_command(command)
 
     async def stepper_run(self, motor_id, completion_callback=None):
