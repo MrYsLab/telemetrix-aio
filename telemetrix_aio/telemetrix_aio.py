@@ -327,6 +327,8 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError
         else:
+            if firmware_version[2] < 5:
+                raise RuntimeError('Please upgrade the server firmware to version 5.0.0 or greater')
             print(f'Telemetrix4Arduino Version Number: {firmware_version[2]}.'
                   f'{firmware_version[3]}.{firmware_version[4]}')
             # start the command dispatcher loop
@@ -483,7 +485,8 @@ class TelemetrixAIO:
         await self._send_command(command)
 
     async def i2c_read(self, address, register, number_of_bytes,
-                       callback, i2c_port=0):
+                       callback, i2c_port=0,
+                       write_register=True):
         """
         Read the specified number of bytes from the specified register for
         the i2c device.
@@ -500,9 +503,15 @@ class TelemetrixAIO:
 
         :param i2c_port: select the default port (0) or secondary port (1)
 
+        :param write_register: If True, the register is written
+                                       before read
+                              Else, the write is suppressed
+
 
         callback returns a data list:
-        [I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]
+
+        [I2C_READ_REPORT, address, register, count of data bytes,
+         data bytes, time-stamp]
 
         """
         if not callback:
@@ -511,11 +520,13 @@ class TelemetrixAIO:
             raise RuntimeError('i2c_read: A Callback must be specified')
 
         await self._i2c_read_request(address, register, number_of_bytes,
-                                     callback=callback, i2c_port=i2c_port)
+                                     callback=callback, i2c_port=i2c_port,
+                                     write_register=write_register)
 
     async def i2c_read_restart_transmission(self, address, register,
                                             number_of_bytes,
-                                            callback, i2c_port=0):
+                                            callback, i2c_port=0,
+                                            write_register=True):
         """
         Read the specified number of bytes from the specified register for
         the i2c device. This restarts the transmission after the read. It is
@@ -534,9 +545,14 @@ class TelemetrixAIO:
 
         :param i2c_port: select the default port (0) or secondary port (1)
 
+        :param write_register: If True, the register is written
+                                       before read
+                              Else, the write is suppressed
+
         callback returns a data list:
 
-        [I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]
+        [I2C_READ_REPORT, address, register, count of data bytes,
+         data bytes, time-stamp]
 
         """
         if not callback:
@@ -547,10 +563,12 @@ class TelemetrixAIO:
 
         await self._i2c_read_request(address, register, number_of_bytes,
                                      stop_transmission=False,
-                                     callback=callback, i2c_port=i2c_port)
+                                     callback=callback, i2c_port=i2c_port,
+                                     write_register=write_register)
 
     async def _i2c_read_request(self, address, register, number_of_bytes,
-                                stop_transmission=True, callback=None, i2c_port=0):
+                                stop_transmission=True, callback=None,
+                                i2c_port=0, write_register=True):
         """
         This method requests the read of an i2c device. Results are retrieved
         via callback.
@@ -567,6 +585,10 @@ class TelemetrixAIO:
                    result of read command.
 
        :param i2c_port: select the default port (0) or secondary port (1)
+
+       :param write_register: If True, the register is written
+                                       before read
+                              Else, the write is suppressed
 
         """
         if not i2c_port:
@@ -596,15 +618,21 @@ class TelemetrixAIO:
         if not register:
             register = 0
 
+        if write_register:
+            write_register = 1
+        else:
+            write_register = 0
+
         # message contains:
         # 1. address
         # 2. register
         # 3. number of bytes
         # 4. restart_transmission - True or False
         # 5. i2c port
+        # 6. suppress write flag
 
         command = [PrivateConstants.I2C_READ, address, register, number_of_bytes,
-                   stop_transmission, i2c_port]
+                   stop_transmission, i2c_port, write_register]
         await self._send_command(command)
 
     async def i2c_write(self, address, args, i2c_port=0):
