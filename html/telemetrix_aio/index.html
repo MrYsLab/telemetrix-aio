@@ -370,6 +370,8 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError
         else:
+            if firmware_version[2] &lt; 5:
+                raise RuntimeError(&#39;Please upgrade the server firmware to version 5.0.0 or greater&#39;)
             print(f&#39;Telemetrix4Arduino Version Number: {firmware_version[2]}.&#39;
                   f&#39;{firmware_version[3]}.{firmware_version[4]}&#39;)
             # start the command dispatcher loop
@@ -526,7 +528,8 @@ class TelemetrixAIO:
         await self._send_command(command)
 
     async def i2c_read(self, address, register, number_of_bytes,
-                       callback, i2c_port=0):
+                       callback, i2c_port=0,
+                       write_register=True):
         &#34;&#34;&#34;
         Read the specified number of bytes from the specified register for
         the i2c device.
@@ -543,9 +546,15 @@ class TelemetrixAIO:
 
         :param i2c_port: select the default port (0) or secondary port (1)
 
+        :param write_register: If True, the register is written
+                                       before read
+                              Else, the write is suppressed
+
 
         callback returns a data list:
-        [I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]
+
+        [I2C_READ_REPORT, address, register, count of data bytes,
+         data bytes, time-stamp]
 
         &#34;&#34;&#34;
         if not callback:
@@ -554,11 +563,13 @@ class TelemetrixAIO:
             raise RuntimeError(&#39;i2c_read: A Callback must be specified&#39;)
 
         await self._i2c_read_request(address, register, number_of_bytes,
-                                     callback=callback, i2c_port=i2c_port)
+                                     callback=callback, i2c_port=i2c_port,
+                                     write_register=write_register)
 
     async def i2c_read_restart_transmission(self, address, register,
                                             number_of_bytes,
-                                            callback, i2c_port=0):
+                                            callback, i2c_port=0,
+                                            write_register=True):
         &#34;&#34;&#34;
         Read the specified number of bytes from the specified register for
         the i2c device. This restarts the transmission after the read. It is
@@ -577,9 +588,14 @@ class TelemetrixAIO:
 
         :param i2c_port: select the default port (0) or secondary port (1)
 
+        :param write_register: If True, the register is written
+                                       before read
+                              Else, the write is suppressed
+
         callback returns a data list:
 
-        [I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]
+        [I2C_READ_REPORT, address, register, count of data bytes,
+         data bytes, time-stamp]
 
         &#34;&#34;&#34;
         if not callback:
@@ -590,10 +606,12 @@ class TelemetrixAIO:
 
         await self._i2c_read_request(address, register, number_of_bytes,
                                      stop_transmission=False,
-                                     callback=callback, i2c_port=i2c_port)
+                                     callback=callback, i2c_port=i2c_port,
+                                     write_register=write_register)
 
     async def _i2c_read_request(self, address, register, number_of_bytes,
-                                stop_transmission=True, callback=None, i2c_port=0):
+                                stop_transmission=True, callback=None,
+                                i2c_port=0, write_register=True):
         &#34;&#34;&#34;
         This method requests the read of an i2c device. Results are retrieved
         via callback.
@@ -610,6 +628,10 @@ class TelemetrixAIO:
                    result of read command.
 
        :param i2c_port: select the default port (0) or secondary port (1)
+
+       :param write_register: If True, the register is written
+                                       before read
+                              Else, the write is suppressed
 
         &#34;&#34;&#34;
         if not i2c_port:
@@ -639,15 +661,21 @@ class TelemetrixAIO:
         if not register:
             register = 0
 
+        if write_register:
+            write_register = 1
+        else:
+            write_register = 0
+
         # message contains:
         # 1. address
         # 2. register
         # 3. number of bytes
         # 4. restart_transmission - True or False
         # 5. i2c port
+        # 6. suppress write flag
 
         command = [PrivateConstants.I2C_READ, address, register, number_of_bytes,
-                   stop_transmission, i2c_port]
+                   stop_transmission, i2c_port, write_register]
         await self._send_command(command)
 
     async def i2c_write(self, address, args, i2c_port=0):
@@ -1390,7 +1418,7 @@ class TelemetrixAIO:
                           servo_config()
                           For DHT   use: set_pin_mode_dht
 
-       :param differential: for analog inputs - threshold
+        :param differential: for analog inputs - threshold
                              value to be achieved for report to
                              be generated
 
@@ -1404,35 +1432,25 @@ class TelemetrixAIO:
             raise RuntimeError(&#39;_set_pin_mode: A Callback must be specified&#39;)
         else:
             if pin_state == PrivateConstants.AT_INPUT:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_INPUT, 1]
                 self.digital_callbacks[pin_number] = callback
             elif pin_state == PrivateConstants.AT_INPUT_PULLUP:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_INPUT_PULLUP, 1]
                 self.digital_callbacks[pin_number] = callback
             elif pin_state == PrivateConstants.AT_ANALOG:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_ANALOG,
+                           differential &gt;&gt; 8, differential &amp; 0xff, 1]
                 self.analog_callbacks[pin_number] = callback
+            elif pin_state == PrivateConstants.AT_OUTPUT:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_OUTPUT, 1]
             else:
-                print(&#39;{} {}&#39;.format(&#39;set_pin_mode: callback ignored for &#39;
-                                     &#39;pin state:&#39;, pin_state))
-
-        if pin_state == PrivateConstants.AT_INPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT, 1]
-
-        elif pin_state == PrivateConstants.AT_INPUT_PULLUP:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT_PULLUP, 1]
-
-        elif pin_state == PrivateConstants.AT_OUTPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_OUTPUT]
-
-        elif pin_state == PrivateConstants.AT_ANALOG:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_ANALOG,
-                       differential &gt;&gt; 8, differential &amp; 0xff, 1]
-        else:
-            if self.shutdown_on_exception:
-                await self.shutdown()
-            raise RuntimeError(&#39;Unknown pin state&#39;)
+                if self.shutdown_on_exception:
+                    await self.shutdown()
+                raise RuntimeError(&#39;Unknown pin state&#39;)
 
         if command:
             await self._send_command(command)
@@ -1482,11 +1500,19 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError(&#39;stepper_move_to: Invalid motor_id.&#39;)
 
+        if position &lt; 0:
+            polarity = 1
+        else:
+            polarity = 0
+        position = abs(position)
+
         position_bytes = list(position.to_bytes(4, &#39;big&#39;, signed=True))
 
         command = [PrivateConstants.STEPPER_MOVE_TO, motor_id]
         for value in position_bytes:
             command.append(value)
+        command.append(polarity)
+
         await self._send_command(command)
 
     async def stepper_move(self, motor_id, relative_position):
@@ -1504,11 +1530,18 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError(&#39;stepper_move: Invalid motor_id.&#39;)
 
-        position_bytes = list(relative_position.to_bytes(4, &#39;big&#39;, signed=True))
+        if relative_position &lt; 0:
+            polarity = 1
+        else:
+            polarity = 0
+        position = abs(relative_position)
+
+        position_bytes = list(position.to_bytes(4, &#39;big&#39;, signed=True))
 
         command = [PrivateConstants.STEPPER_MOVE, motor_id]
         for value in position_bytes:
             command.append(value)
+        command.append(polarity)
         await self._send_command(command)
 
     async def stepper_run(self, motor_id, completion_callback=None):
@@ -2827,6 +2860,8 @@ error occurs</p></div>
                 await self.shutdown()
             raise RuntimeError
         else:
+            if firmware_version[2] &lt; 5:
+                raise RuntimeError(&#39;Please upgrade the server firmware to version 5.0.0 or greater&#39;)
             print(f&#39;Telemetrix4Arduino Version Number: {firmware_version[2]}.&#39;
                   f&#39;{firmware_version[3]}.{firmware_version[4]}&#39;)
             # start the command dispatcher loop
@@ -2983,7 +3018,8 @@ error occurs</p></div>
         await self._send_command(command)
 
     async def i2c_read(self, address, register, number_of_bytes,
-                       callback, i2c_port=0):
+                       callback, i2c_port=0,
+                       write_register=True):
         &#34;&#34;&#34;
         Read the specified number of bytes from the specified register for
         the i2c device.
@@ -3000,9 +3036,15 @@ error occurs</p></div>
 
         :param i2c_port: select the default port (0) or secondary port (1)
 
+        :param write_register: If True, the register is written
+                                       before read
+                              Else, the write is suppressed
+
 
         callback returns a data list:
-        [I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]
+
+        [I2C_READ_REPORT, address, register, count of data bytes,
+         data bytes, time-stamp]
 
         &#34;&#34;&#34;
         if not callback:
@@ -3011,11 +3053,13 @@ error occurs</p></div>
             raise RuntimeError(&#39;i2c_read: A Callback must be specified&#39;)
 
         await self._i2c_read_request(address, register, number_of_bytes,
-                                     callback=callback, i2c_port=i2c_port)
+                                     callback=callback, i2c_port=i2c_port,
+                                     write_register=write_register)
 
     async def i2c_read_restart_transmission(self, address, register,
                                             number_of_bytes,
-                                            callback, i2c_port=0):
+                                            callback, i2c_port=0,
+                                            write_register=True):
         &#34;&#34;&#34;
         Read the specified number of bytes from the specified register for
         the i2c device. This restarts the transmission after the read. It is
@@ -3034,9 +3078,14 @@ error occurs</p></div>
 
         :param i2c_port: select the default port (0) or secondary port (1)
 
+        :param write_register: If True, the register is written
+                                       before read
+                              Else, the write is suppressed
+
         callback returns a data list:
 
-        [I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]
+        [I2C_READ_REPORT, address, register, count of data bytes,
+         data bytes, time-stamp]
 
         &#34;&#34;&#34;
         if not callback:
@@ -3047,10 +3096,12 @@ error occurs</p></div>
 
         await self._i2c_read_request(address, register, number_of_bytes,
                                      stop_transmission=False,
-                                     callback=callback, i2c_port=i2c_port)
+                                     callback=callback, i2c_port=i2c_port,
+                                     write_register=write_register)
 
     async def _i2c_read_request(self, address, register, number_of_bytes,
-                                stop_transmission=True, callback=None, i2c_port=0):
+                                stop_transmission=True, callback=None,
+                                i2c_port=0, write_register=True):
         &#34;&#34;&#34;
         This method requests the read of an i2c device. Results are retrieved
         via callback.
@@ -3067,6 +3118,10 @@ error occurs</p></div>
                    result of read command.
 
        :param i2c_port: select the default port (0) or secondary port (1)
+
+       :param write_register: If True, the register is written
+                                       before read
+                              Else, the write is suppressed
 
         &#34;&#34;&#34;
         if not i2c_port:
@@ -3096,15 +3151,21 @@ error occurs</p></div>
         if not register:
             register = 0
 
+        if write_register:
+            write_register = 1
+        else:
+            write_register = 0
+
         # message contains:
         # 1. address
         # 2. register
         # 3. number of bytes
         # 4. restart_transmission - True or False
         # 5. i2c port
+        # 6. suppress write flag
 
         command = [PrivateConstants.I2C_READ, address, register, number_of_bytes,
-                   stop_transmission, i2c_port]
+                   stop_transmission, i2c_port, write_register]
         await self._send_command(command)
 
     async def i2c_write(self, address, args, i2c_port=0):
@@ -3847,7 +3908,7 @@ error occurs</p></div>
                           servo_config()
                           For DHT   use: set_pin_mode_dht
 
-       :param differential: for analog inputs - threshold
+        :param differential: for analog inputs - threshold
                              value to be achieved for report to
                              be generated
 
@@ -3861,35 +3922,25 @@ error occurs</p></div>
             raise RuntimeError(&#39;_set_pin_mode: A Callback must be specified&#39;)
         else:
             if pin_state == PrivateConstants.AT_INPUT:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_INPUT, 1]
                 self.digital_callbacks[pin_number] = callback
             elif pin_state == PrivateConstants.AT_INPUT_PULLUP:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_INPUT_PULLUP, 1]
                 self.digital_callbacks[pin_number] = callback
             elif pin_state == PrivateConstants.AT_ANALOG:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_ANALOG,
+                           differential &gt;&gt; 8, differential &amp; 0xff, 1]
                 self.analog_callbacks[pin_number] = callback
+            elif pin_state == PrivateConstants.AT_OUTPUT:
+                command = [PrivateConstants.SET_PIN_MODE, pin_number,
+                           PrivateConstants.AT_OUTPUT, 1]
             else:
-                print(&#39;{} {}&#39;.format(&#39;set_pin_mode: callback ignored for &#39;
-                                     &#39;pin state:&#39;, pin_state))
-
-        if pin_state == PrivateConstants.AT_INPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT, 1]
-
-        elif pin_state == PrivateConstants.AT_INPUT_PULLUP:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT_PULLUP, 1]
-
-        elif pin_state == PrivateConstants.AT_OUTPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_OUTPUT]
-
-        elif pin_state == PrivateConstants.AT_ANALOG:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_ANALOG,
-                       differential &gt;&gt; 8, differential &amp; 0xff, 1]
-        else:
-            if self.shutdown_on_exception:
-                await self.shutdown()
-            raise RuntimeError(&#39;Unknown pin state&#39;)
+                if self.shutdown_on_exception:
+                    await self.shutdown()
+                raise RuntimeError(&#39;Unknown pin state&#39;)
 
         if command:
             await self._send_command(command)
@@ -3939,11 +3990,19 @@ error occurs</p></div>
                 await self.shutdown()
             raise RuntimeError(&#39;stepper_move_to: Invalid motor_id.&#39;)
 
+        if position &lt; 0:
+            polarity = 1
+        else:
+            polarity = 0
+        position = abs(position)
+
         position_bytes = list(position.to_bytes(4, &#39;big&#39;, signed=True))
 
         command = [PrivateConstants.STEPPER_MOVE_TO, motor_id]
         for value in position_bytes:
             command.append(value)
+        command.append(polarity)
+
         await self._send_command(command)
 
     async def stepper_move(self, motor_id, relative_position):
@@ -3961,11 +4020,18 @@ error occurs</p></div>
                 await self.shutdown()
             raise RuntimeError(&#39;stepper_move: Invalid motor_id.&#39;)
 
-        position_bytes = list(relative_position.to_bytes(4, &#39;big&#39;, signed=True))
+        if relative_position &lt; 0:
+            polarity = 1
+        else:
+            polarity = 0
+        position = abs(relative_position)
+
+        position_bytes = list(position.to_bytes(4, &#39;big&#39;, signed=True))
 
         command = [PrivateConstants.STEPPER_MOVE, motor_id]
         for value in position_bytes:
             command.append(value)
+        command.append(polarity)
         await self._send_command(command)
 
     async def stepper_run(self, motor_id, completion_callback=None):
@@ -5134,7 +5200,7 @@ error occurs</p></div>
 </details>
 </dd>
 <dt id="telemetrix_aio.telemetrix_aio.TelemetrixAIO.i2c_read"><code class="name flex">
-<span>async def <span class="ident">i2c_read</span></span>(<span>self, address, register, number_of_bytes, callback, i2c_port=0)</span>
+<span>async def <span class="ident">i2c_read</span></span>(<span>self, address, register, number_of_bytes, callback, i2c_port=0, write_register=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Read the specified number of bytes from the specified register for
@@ -5145,14 +5211,19 @@ the i2c device.</p>
 <p>:param callback: Required callback function to report i2c data as a
 result of read command</p>
 <p>:param i2c_port: select the default port (0) or secondary port (1)</p>
-<p>callback returns a data list:
-[I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]</p></div>
+<p>:param write_register: If True, the register is written
+before read
+Else, the write is suppressed</p>
+<p>callback returns a data list:</p>
+<p>[I2C_READ_REPORT, address, register, count of data bytes,
+data bytes, time-stamp]</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">async def i2c_read(self, address, register, number_of_bytes,
-                   callback, i2c_port=0):
+                   callback, i2c_port=0,
+                   write_register=True):
     &#34;&#34;&#34;
     Read the specified number of bytes from the specified register for
     the i2c device.
@@ -5169,9 +5240,15 @@ result of read command</p>
 
     :param i2c_port: select the default port (0) or secondary port (1)
 
+    :param write_register: If True, the register is written
+                                   before read
+                          Else, the write is suppressed
+
 
     callback returns a data list:
-    [I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]
+
+    [I2C_READ_REPORT, address, register, count of data bytes,
+     data bytes, time-stamp]
 
     &#34;&#34;&#34;
     if not callback:
@@ -5180,11 +5257,12 @@ result of read command</p>
         raise RuntimeError(&#39;i2c_read: A Callback must be specified&#39;)
 
     await self._i2c_read_request(address, register, number_of_bytes,
-                                 callback=callback, i2c_port=i2c_port)</code></pre>
+                                 callback=callback, i2c_port=i2c_port,
+                                 write_register=write_register)</code></pre>
 </details>
 </dd>
 <dt id="telemetrix_aio.telemetrix_aio.TelemetrixAIO.i2c_read_restart_transmission"><code class="name flex">
-<span>async def <span class="ident">i2c_read_restart_transmission</span></span>(<span>self, address, register, number_of_bytes, callback, i2c_port=0)</span>
+<span>async def <span class="ident">i2c_read_restart_transmission</span></span>(<span>self, address, register, number_of_bytes, callback, i2c_port=0, write_register=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Read the specified number of bytes from the specified register for
@@ -5197,15 +5275,20 @@ selection is needed)</p>
 <p>:param callback: Required callback function to report i2c data as a
 result of read command</p>
 <p>:param i2c_port: select the default port (0) or secondary port (1)</p>
+<p>:param write_register: If True, the register is written
+before read
+Else, the write is suppressed</p>
 <p>callback returns a data list:</p>
-<p>[I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]</p></div>
+<p>[I2C_READ_REPORT, address, register, count of data bytes,
+data bytes, time-stamp]</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">async def i2c_read_restart_transmission(self, address, register,
                                         number_of_bytes,
-                                        callback, i2c_port=0):
+                                        callback, i2c_port=0,
+                                        write_register=True):
     &#34;&#34;&#34;
     Read the specified number of bytes from the specified register for
     the i2c device. This restarts the transmission after the read. It is
@@ -5224,9 +5307,14 @@ result of read command</p>
 
     :param i2c_port: select the default port (0) or secondary port (1)
 
+    :param write_register: If True, the register is written
+                                   before read
+                          Else, the write is suppressed
+
     callback returns a data list:
 
-    [I2C_READ_REPORT, address, register, count of data bytes, data bytes, time-stamp]
+    [I2C_READ_REPORT, address, register, count of data bytes,
+     data bytes, time-stamp]
 
     &#34;&#34;&#34;
     if not callback:
@@ -5237,7 +5325,8 @@ result of read command</p>
 
     await self._i2c_read_request(address, register, number_of_bytes,
                                  stop_transmission=False,
-                                 callback=callback, i2c_port=i2c_port)</code></pre>
+                                 callback=callback, i2c_port=i2c_port,
+                                 write_register=write_register)</code></pre>
 </details>
 </dd>
 <dt id="telemetrix_aio.telemetrix_aio.TelemetrixAIO.i2c_write"><code class="name flex">
@@ -6538,6 +6627,8 @@ an asyncio function.</p></div>
             await self.shutdown()
         raise RuntimeError
     else:
+        if firmware_version[2] &lt; 5:
+            raise RuntimeError(&#39;Please upgrade the server firmware to version 5.0.0 or greater&#39;)
         print(f&#39;Telemetrix4Arduino Version Number: {firmware_version[2]}.&#39;
               f&#39;{firmware_version[3]}.{firmware_version[4]}&#39;)
         # start the command dispatcher loop
@@ -6906,11 +6997,18 @@ the current position. Maximum value is 32 bits.</p></div>
             await self.shutdown()
         raise RuntimeError(&#39;stepper_move: Invalid motor_id.&#39;)
 
-    position_bytes = list(relative_position.to_bytes(4, &#39;big&#39;, signed=True))
+    if relative_position &lt; 0:
+        polarity = 1
+    else:
+        polarity = 0
+    position = abs(relative_position)
+
+    position_bytes = list(position.to_bytes(4, &#39;big&#39;, signed=True))
 
     command = [PrivateConstants.STEPPER_MOVE, motor_id]
     for value in position_bytes:
         command.append(value)
+    command.append(polarity)
     await self._send_command(command)</code></pre>
 </details>
 </dd>
@@ -6954,11 +7052,19 @@ after calling moveTo().</p>
             await self.shutdown()
         raise RuntimeError(&#39;stepper_move_to: Invalid motor_id.&#39;)
 
+    if position &lt; 0:
+        polarity = 1
+    else:
+        polarity = 0
+    position = abs(position)
+
     position_bytes = list(position.to_bytes(4, &#39;big&#39;, signed=True))
 
     command = [PrivateConstants.STEPPER_MOVE_TO, motor_id]
     for value in position_bytes:
         command.append(value)
+    command.append(polarity)
+
     await self._send_command(command)</code></pre>
 </details>
 </dd>
