@@ -761,7 +761,7 @@ class TelemetrixAIO:
 
         [pin_type, pin_number, pin_value, raw_time_stamp]
 
-        The pin_type for analog input pins = 2
+        The pin_type for analog input pins = 3
 
         &#34;&#34;&#34;
 
@@ -798,7 +798,7 @@ class TelemetrixAIO:
 
         [pin_type, pin_number, pin_value, raw_time_stamp]
 
-        The pin_type for digital input pins = 0
+        The pin_type for all digital input pins = 2
 
         &#34;&#34;&#34;
         await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT, differential=0,
@@ -816,7 +816,7 @@ class TelemetrixAIO:
 
         [pin_type, pin_number, pin_value, raw_time_stamp]
 
-        The pin_type for digital input pins with pullups enabled = 11
+        The pin_type for all digital input pins = 2
 
         &#34;&#34;&#34;
         if not callback:
@@ -3251,7 +3251,7 @@ error occurs</p></div>
 
         [pin_type, pin_number, pin_value, raw_time_stamp]
 
-        The pin_type for analog input pins = 2
+        The pin_type for analog input pins = 3
 
         &#34;&#34;&#34;
 
@@ -3288,7 +3288,7 @@ error occurs</p></div>
 
         [pin_type, pin_number, pin_value, raw_time_stamp]
 
-        The pin_type for digital input pins = 0
+        The pin_type for all digital input pins = 2
 
         &#34;&#34;&#34;
         await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT, differential=0,
@@ -3306,7 +3306,7 @@ error occurs</p></div>
 
         [pin_type, pin_number, pin_value, raw_time_stamp]
 
-        The pin_type for digital input pins with pullups enabled = 11
+        The pin_type for all digital input pins = 2
 
         &#34;&#34;&#34;
         if not callback:
@@ -5802,7 +5802,7 @@ another read or write.</p>
 report will be generated</p>
 <p>callback returns a data list:</p>
 <p>[pin_type, pin_number, pin_value, raw_time_stamp]</p>
-<p>The pin_type for analog input pins = 2</p></div>
+<p>The pin_type for analog input pins = 3</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -5822,7 +5822,7 @@ report will be generated</p>
 
     [pin_type, pin_number, pin_value, raw_time_stamp]
 
-    The pin_type for analog input pins = 2
+    The pin_type for analog input pins = 3
 
     &#34;&#34;&#34;
 
@@ -5927,7 +5927,7 @@ Time]</p></div>
 <p>:param callback: async callback function</p>
 <p>callback returns a data list:</p>
 <p>[pin_type, pin_number, pin_value, raw_time_stamp]</p>
-<p>The pin_type for digital input pins = 0</p></div>
+<p>The pin_type for all digital input pins = 2</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -5944,7 +5944,7 @@ Time]</p></div>
 
     [pin_type, pin_number, pin_value, raw_time_stamp]
 
-    The pin_type for digital input pins = 0
+    The pin_type for all digital input pins = 2
 
     &#34;&#34;&#34;
     await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT, differential=0,
@@ -5960,7 +5960,7 @@ Time]</p></div>
 <p>:param callback: async callback function</p>
 <p>callback returns a data list:</p>
 <p>[pin_type, pin_number, pin_value, raw_time_stamp]</p>
-<p>The pin_type for digital input pins with pullups enabled = 11</p></div>
+<p>The pin_type for all digital input pins = 2</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -5977,7 +5977,7 @@ Time]</p></div>
 
     [pin_type, pin_number, pin_value, raw_time_stamp]
 
-    The pin_type for digital input pins with pullups enabled = 11
+    The pin_type for all digital input pins = 2
 
     &#34;&#34;&#34;
     if not callback:

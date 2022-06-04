@@ -718,7 +718,7 @@ class TelemetrixAIO:
 
         [pin_type, pin_number, pin_value, raw_time_stamp]
 
-        The pin_type for analog input pins = 2
+        The pin_type for analog input pins = 3
 
         """
 
@@ -755,7 +755,7 @@ class TelemetrixAIO:
 
         [pin_type, pin_number, pin_value, raw_time_stamp]
 
-        The pin_type for digital input pins = 0
+        The pin_type for all digital input pins = 2
 
         """
         await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT, differential=0,
@@ -773,7 +773,7 @@ class TelemetrixAIO:
 
         [pin_type, pin_number, pin_value, raw_time_stamp]
 
-        The pin_type for digital input pins with pullups enabled = 11
+        The pin_type for all digital input pins = 2
 
         """
         if not callback:
