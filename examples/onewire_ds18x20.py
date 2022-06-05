@@ -110,7 +110,7 @@ class OneWireTemp:
 
                 await self.board.onewire_skip()
 
-                # read the the data from the scratch pad
+                # read the data from the scratch pad
                 await self.board.onewire_write(0xBE)
 
                 for x in range(10):
@@ -221,9 +221,10 @@ async def onewire_example(the_board, data_pin):
 
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-# instantiate pymata_express
+# instantiate telemetrix_aio
 board = telemetrix_aio.TelemetrixAIO()
 
 try:

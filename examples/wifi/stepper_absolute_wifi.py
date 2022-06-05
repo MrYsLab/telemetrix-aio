@@ -76,9 +76,10 @@ async def step_absolute(the_board):
             sys.exit(0)
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-# instantiate pymata_express
+# instantiate telemetrix_aio
 board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.112')
 try:
     # start the main function
@@ -88,4 +89,3 @@ try:
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)
-

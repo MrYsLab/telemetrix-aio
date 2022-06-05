@@ -39,7 +39,7 @@ async def loop_back(my_board, loop_back_data):
     This function will request that the supplied characters be
     sent to the board and looped back and printed out to the console.
 
-    :param my_board: a pymata4 instance
+    :param my_board: a telemetrix_aio instance
     :param loop_back_data: A list of characters to have looped back
     """
     try:
@@ -52,9 +52,10 @@ async def loop_back(my_board, loop_back_data):
         sys.exit(0)
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-# instantiate pymata_express
+# instantiate telemetrix_aio
 board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.220')
 char_list = ['A', 'B', 'Z']
 try:
@@ -65,4 +66,3 @@ try:
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)
-

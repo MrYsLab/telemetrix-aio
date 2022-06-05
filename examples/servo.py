@@ -31,7 +31,7 @@ async def servo(my_board, pin):
     Set a pin to servo mode and then adjust
     its position.
 
-    :param my_board: pymata_express instance
+    :param my_board: telemetrix_aio instance
     :param pin: pin to be controlled
     """
 
@@ -47,7 +47,9 @@ async def servo(my_board, pin):
     await my_board.servo_write(pin, 180)
     await my_board.servo_detach(pin)
 
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
 board = telemetrix_aio.TelemetrixAIO()
 try:
     loop.run_until_complete(servo(board, 5))
