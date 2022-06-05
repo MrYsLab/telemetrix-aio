@@ -73,7 +73,7 @@ async def dht(my_board):
         Set the pin mode for a DHT 22 device. Results will appear via the
         callback.
 
-        :param my_board: an pymata express instance
+        :param my_board: a telemetrix instance
 
         """
 
@@ -93,9 +93,10 @@ async def dht(my_board):
 
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-# instantiate pymata_express
+# instantiate telemetrix_aio
 board = telemetrix_aio.TelemetrixAIO()
 try:
     loop.run_until_complete(dht(board))

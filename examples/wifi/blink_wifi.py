@@ -32,7 +32,7 @@ async def blink(my_board, pin):
     """
     This function will to toggle a digital pin.
 
-    :param my_board: an PymataExpress instance
+    :param my_board: a telemetrix_aio instance
     :param pin: pin to be controlled
     """
 
@@ -50,9 +50,10 @@ async def blink(my_board, pin):
 
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-# instantiate pymata_express
+# instantiate telemetrix_aio
 board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.220')
 
 try:

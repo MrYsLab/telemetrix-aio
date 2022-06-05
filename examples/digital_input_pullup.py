@@ -37,7 +37,7 @@ CB_VALUE = 2
 CB_TIME = 3
 
 
-# Setup a pin for digital pin input and monitor its changes
+# Set up a pin for digital pin input and monitor its changes
 
 async def the_callback(data):
     """
@@ -57,7 +57,7 @@ async def digital_in_pullup(my_board, pin):
      digital input. Any changes on this pin will
      be reported through the call back function.
 
-     :param my_board: a pymata_express instance
+     :param my_board: a telemetrix_aio instance
      :param pin: Arduino pin number
      """
 
@@ -74,9 +74,10 @@ async def digital_in_pullup(my_board, pin):
 
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-# instantiate pymata_express
+# instantiate telemetrix_aio
 board = telemetrix_aio.TelemetrixAIO()
 
 try:

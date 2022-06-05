@@ -33,9 +33,9 @@ Setup a pin for output and fade its intensity
 DIGITAL_PIN = 2
 
 
-async def fade(board, pin):
+async def fade(the_board, pin):
     # Set the DIGITAL_PIN as an output pin
-    await board.set_pin_mode_analog_output(DIGITAL_PIN)
+    await the_board.set_pin_mode_analog_output(pin)
 
     # When hitting control-c to end the program
     # in this loop, we are likely to get a KeyboardInterrupt
@@ -44,21 +44,22 @@ async def fade(board, pin):
     try:
         print('Fading up...')
         for i in range(1023, -1, -1):
-            await board.analog_write(DIGITAL_PIN, i)
+            await the_board.analog_write(DIGITAL_PIN, i)
             await asyncio.sleep(.0005)
         print('Fading down...')
 
         for i in range(1024):
-            await board.analog_write(DIGITAL_PIN, i)
+            await the_board.analog_write(DIGITAL_PIN, i)
             await asyncio.sleep(.0005)
     except KeyboardInterrupt:
-        board.shutdown()
+        the_board.shutdown()
         sys.exit(0)
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-# instantiate pymata_express
+# instantiate telemetrix_aio
 board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.220')
 
 try:

@@ -31,10 +31,11 @@ HUMIDITY = 2
 TEMPERATURE = 3
 TIME = 4
 
+
 # indices into callback data for error report
-REPORT_TYPE = 0
-PIN = 1
-ERROR_VALUE = 2
+# REPORT_TYPE = 0
+# PIN = 1
+# ERROR_VALUE = 2
 
 # A callback function to display the distance
 async def the_callback(data):
@@ -47,7 +48,7 @@ async def the_callback(data):
     if data[1]:
         # error message
         date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[4]))
-        print(f'DHT Error Report:' 
+        print(f'DHT Error Report:'
               f'Pin: {data[2]} Error: {data[3]}  Time: {date}')
     else:
         date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[5]))
@@ -60,7 +61,7 @@ async def dht(my_board, pin, callback):
     Set the pin mode for a DHT 22 device. Results will appear via the
     callback.
 
-    :param my_board: an pymata express instance
+    :param my_board: telemetrix-aio instance
     :param pin: Arduino pin number
     :param callback: The callback function
     """
@@ -77,9 +78,10 @@ async def dht(my_board, pin, callback):
 
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-# instantiate pymata_express
+# instantiate telemetrix_aio
 board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.220')
 
 try:

@@ -32,7 +32,7 @@ Monitor a digital input pin
 Setup a pin for digital input and monitor its changes
 """
 
-# Setup a pin for analog input and monitor its changes
+# Set up a pin for analog input and monitor its changes
 DIGITAL_PIN = 12  # arduino pin number
 
 # Callback data indices
@@ -60,7 +60,7 @@ async def digital_in(my_board, pin):
      digital input. Any changes on this pin will
      be reported through the call back function.
 
-     :param my_board: a pymata_express instance
+     :param my_board: a telemetrix_aio instance
      :param pin: Arduino pin number
      """
 
@@ -85,9 +85,10 @@ async def digital_in(my_board, pin):
             sys.exit(0)
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-# instantiate pymata_express
+# instantiate telemetrix_aio
 board = telemetrix_aio.TelemetrixAIO()
 
 try:
