@@ -1040,6 +1040,20 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError(f'The Stepper feature is disabled in the server.')
 
+    async def sonar_disable(self):
+        """
+        Disable sonar scanning for all sonar sensors
+        """
+        command = [PrivateConstants.SONAR_DISABLE]
+        await self._send_command(command)
+
+    async def sonar_enable(self):
+        """
+        Enable sonar scanning for all sonar sensors
+        """
+        command = [PrivateConstants.SONAR_ENABLE]
+        await self._send_command(command)
+
     async def spi_cs_control(self, chip_select_pin, select):
         """
         Control an SPI chip select line

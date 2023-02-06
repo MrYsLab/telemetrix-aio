@@ -78,6 +78,8 @@ class PrivateConstants:
     STEPPER_GET_DISTANCE_TO_GO = 52
     STEPPER_GET_TARGET_POSITION = 53
     GET_FEATURES = 54
+    SONAR_DISABLE = 55
+    SONAR_ENABLE = 56
 
     # reports
     # debug data from Arduino
@@ -100,9 +102,10 @@ class PrivateConstants:
     STEPPER_RUN_COMPLETE_REPORT = 19
     FEATURES = 20
 
+
     DEBUG_PRINT = 99
 
-    TELEMETRIX_AIO_VERSION = "1.11"
+    TELEMETRIX_AIO_VERSION = "1.12"
 
     # reporting control
     REPORTING_DISABLE_ALL = 0
