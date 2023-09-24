@@ -54,7 +54,7 @@ loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
 # instantiate telemetrix_aio
-board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.220')
+board = telemetrix_aio.TelemetrixAIO(ip_address='192.168.2.168')
 
 try:
     # start the main function

@@ -14,8 +14,7 @@
  along with this library; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
- DHT support courtesy of Martyn Wheeler
- Based on the DHTNew library - https://github.com/RobTillaart/DHTNew
+
 """
 import asyncio
 import time
@@ -30,26 +29,33 @@ Run a motor continuously without acceleration
 
 async def step_continuous(the_board):
     # create an accelstepper instance for a TB6600 motor driver
-    motor = await the_board.set_pin_mode_stepper(interface=2, pin1=8, pin2=9)
+    motor = await the_board.set_pin_mode_stepper(interface=1, pin1=8, pin2=9)
 
     # if you are using a 28BYJ-48 Stepper Motor with ULN2003
     # comment out the line above and uncomment out the line below.
     # motor = await the_board.set_pin_mode_stepper(interface=4, pin1=5, pin2=4, pin3=14,
     # pin4=12)
 
-    # set the max speed and speed
-    await the_board.stepper_set_max_speed(motor, 900)
-    await the_board.stepper_set_speed(motor, 800)
-    # run the motor
-    await the_board.stepper_run_speed(motor)
-
-    # keep application running
     while True:
-        try:
-            await asyncio.sleep(.0002)
-        except KeyboardInterrupt:
-            await the_board.shutdown()
-            sys.exit(0)
+        # set the max speed and speed
+        await the_board.stepper_set_max_speed(motor, 900)
+        await the_board.stepper_set_speed(motor, 200)
+        # run the motor
+        await the_board.stepper_run_speed(motor)
+        await asyncio.sleep(5)
+
+        await the_board.stepper_stop(motor)
+        await asyncio.sleep(2)
+
+        # change direction
+        await the_board.stepper_set_max_speed(motor, 900)
+        await the_board.stepper_set_speed(motor, -200)
+        # run the motor
+        await the_board.stepper_run_speed(motor)
+        await asyncio.sleep(5)
+
+        await the_board.stepper_stop(motor)
+        await asyncio.sleep(2)
 
 # get the event loop
 loop = asyncio.new_event_loop()

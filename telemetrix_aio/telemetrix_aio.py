@@ -264,7 +264,7 @@ class TelemetrixAIO:
             self.stepper_info_list.append(self.stepper_info)
 
         print(f'TelemetrixAIO Version: {PrivateConstants.TELEMETRIX_AIO_VERSION}')
-        print(f'Copyright (c) 2018-2021 Alan Yorinks All rights reserved.\n')
+        print(f'Copyright (c) 2018-2023 Alan Yorinks All rights reserved.\n')
 
         if autostart:
             self.loop.run_until_complete(self.start_aio())
@@ -1073,11 +1073,14 @@ class TelemetrixAIO:
         command = [PrivateConstants.SPI_CS_CONTROL, chip_select_pin, select]
         await self._send_command(command)
 
-    async def spi_read_blocking(self, register_selection, number_of_bytes_to_read,
+    async def spi_read_blocking(self, chip_select, register_selection,
+                                number_of_bytes_to_read,
                           call_back=None):
         """
         Read the specified number of bytes from the specified SPI port and
         call the callback function with the reported data.
+
+        :param chip_select: chip select pin
 
         :param register_selection: Register to be selected for read.
 
@@ -1088,8 +1091,8 @@ class TelemetrixAIO:
 
 
         callback returns a data list:
-        [SPI_READ_REPORT, count of data bytes read, data bytes, time-stamp]
-
+            [SPI_READ_REPORT, chip select pin, SPI Register, count of data bytes read,
+             data bytes, time-stamp]
         SPI_READ_REPORT = 13
 
         """
@@ -1106,7 +1109,8 @@ class TelemetrixAIO:
 
         self.spi_callback = call_back
 
-        command = [PrivateConstants.SPI_READ_BLOCKING, number_of_bytes_to_read,
+        command = [PrivateConstants.SPI_READ_BLOCKING, chip_select,
+                   number_of_bytes_to_read,
                    register_selection]
 
         await self._send_command(command)
@@ -1117,7 +1121,7 @@ class TelemetrixAIO:
 
         See Arduino SPI reference materials for details.
 
-        :param clock_divisor:
+        :param clock_divisor: 1 - 255
 
         :param bit_order:
 
@@ -1142,13 +1146,22 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError(f'spi_set_format: SPI interface is not enabled.')
 
+        if not 0 < clock_divisor <= 255:
+            raise RuntimeError(f'spi_set_format: illegal clock divisor selected.')
+        if bit_order not in [0, 1]:
+            raise RuntimeError(f'spi_set_format: illegal bit_order selected.')
+        if data_mode not in [0, 4, 8, 12]:
+            raise RuntimeError(f'spi_set_format: illegal data_order selected.')
+
         command = [PrivateConstants.SPI_SET_FORMAT, clock_divisor, bit_order,
                    data_mode]
         await self._send_command(command)
 
-    async def spi_write_blocking(self, bytes_to_write):
+    async def spi_write_blocking(self, chip_select, bytes_to_write):
         """
         Write a list of bytes to the SPI device.
+
+        :param chip_select: chip select pin
 
         :param bytes_to_write: A list of bytes to write. This must
                                 be in the form of a list.
@@ -1165,7 +1178,7 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError('spi_write_blocking: bytes_to_write must be a list.')
 
-        command = [PrivateConstants.SPI_WRITE_BLOCKING, len(bytes_to_write)]
+        command = [PrivateConstants.SPI_WRITE_BLOCKING, chip_select, len(bytes_to_write)]
 
         for data in bytes_to_write:
             command.append(data)
@@ -1656,7 +1669,7 @@ class TelemetrixAIO:
 
         :param motor_id: 0 - 3
 
-        :param speed: 0 - 1000 The desired constant speed in steps per
+        :param speed: -1000 - 1000 The desired constant speed in steps per
                       second. Positive is clockwise. Speeds of more than 1000 steps per
                       second are unreliable. Speed accuracy depends on the Arduino
                       crystal. Jitter depends on how frequently you call the
@@ -1669,18 +1682,29 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError('stepper_set_speed: Invalid motor_id.')
 
-        if not 0 < speed <= 1000:
+        if not -1000 <= speed <= 1000:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('stepper_set_speed: Speed range is 0 - '
-                               '1000.')
+            raise RuntimeError('stepper_set_speed: speed range is -1000 to 1000')
 
-        self.stepper_info_list[motor_id]['speed'] = speed
+        if speed < 0:
+            polarity = 1
+        else:
+            polarity = 0
 
-        speed_msb = speed >> 8
-        speed_lsb = speed & 0xff
+        speed = abs(speed)
+        if not self.stepper_info_list[motor_id]['instance']:
+            if self.shutdown_on_exception:
+                self.shutdown()
+            raise RuntimeError('stepper_move: Invalid motor_id.')
 
-        command = [PrivateConstants.STEPPER_SET_SPEED, motor_id, speed_msb, speed_lsb]
+        position_bytes = list(speed.to_bytes(2, 'big', signed=True))
+
+        command = [PrivateConstants.STEPPER_SET_SPEED, motor_id]
+
+        for value in position_bytes:
+            command.append(value)
+        command.append(polarity)
         await self._send_command(command)
 
     async def stepper_get_speed(self, motor_id):
