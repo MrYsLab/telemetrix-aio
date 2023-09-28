@@ -105,7 +105,7 @@ class PrivateConstants:
 
     DEBUG_PRINT = 99
 
-    TELEMETRIX_AIO_VERSION = "1.20"
+    TELEMETRIX_AIO_VERSION = "1.21"
 
     # reporting control
     REPORTING_DISABLE_ALL = 0
