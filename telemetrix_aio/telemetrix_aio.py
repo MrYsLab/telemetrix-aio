@@ -1695,7 +1695,7 @@ class TelemetrixAIO:
         speed = abs(speed)
         if not self.stepper_info_list[motor_id]['instance']:
             if self.shutdown_on_exception:
-                self.shutdown()
+                await self.shutdown()
             raise RuntimeError('stepper_move: Invalid motor_id.')
 
         position_bytes = list(speed.to_bytes(2, 'big', signed=True))
