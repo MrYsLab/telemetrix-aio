@@ -1474,7 +1474,7 @@ class TelemetrixAIO:
         If you are trying to use constant speed movements, you should call setSpeed()
         after calling moveTo().
 
-        :param motor_id: motor id: 0 - 3
+        :param motor_id: motor id: 0 - 7
 
         :param position: target position. Maximum value is 32 bits.
         """
@@ -1503,7 +1503,7 @@ class TelemetrixAIO:
         """
         Set the target position relative to the current position.
 
-        :param motor_id: motor id: 0 - 3
+        :param motor_id: motor id: 0 - 7
 
         :param relative_position: The desired position relative to the current
                                   position. Negative is anticlockwise from
@@ -1534,7 +1534,7 @@ class TelemetrixAIO:
 
         Once called, the server will continuously attempt to step the motor.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param completion_callback: call back function to receive motion complete
                                     notification
@@ -1567,7 +1567,7 @@ class TelemetrixAIO:
 
         Once called, the server will continuously attempt to step the motor.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         """
         if not self.stepper_info_list[motor_id]['instance']:
@@ -1589,7 +1589,7 @@ class TelemetrixAIO:
          Caution: Speeds that exceed the maximum speed supported by the processor may
                   result in non-linear accelerations and decelerations.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param max_speed: 1 - 1000
         """
@@ -1619,7 +1619,7 @@ class TelemetrixAIO:
 
         Value is stored in the client, so no callback is required.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :return: The currently configured maximum speed.
         """
@@ -1634,7 +1634,7 @@ class TelemetrixAIO:
         """
         Sets the acceleration/deceleration rate.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param acceleration: The desired acceleration in steps per second
                              per second. Must be > 0.0. This is an
@@ -1667,7 +1667,7 @@ class TelemetrixAIO:
         """
         Sets the desired constant speed for use with stepper_run_speed().
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param speed: -1000 - 1000 The desired constant speed in steps per
                       second. Positive is clockwise. Speeds of more than 1000 steps per
@@ -1714,7 +1714,7 @@ class TelemetrixAIO:
 
         Value is stored in the client, so no callback is required.
 
-        :param motor_id:  0 - 3
+        :param motor_id:  0 - 7
 
         """
         if not self.stepper_info_list[motor_id]['instance']:
@@ -1729,7 +1729,7 @@ class TelemetrixAIO:
         Request the distance from the current position to the target position
         from the server.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param distance_to_go_callback: required callback function to receive report
 
@@ -1758,7 +1758,7 @@ class TelemetrixAIO:
         """
         Request the most recently set target position from the server.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param target_callback: required callback function to receive report
 
@@ -1790,7 +1790,7 @@ class TelemetrixAIO:
         """
         Request the current motor position from the server.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param current_position_callback: required callback function to receive report
 
@@ -1825,7 +1825,7 @@ class TelemetrixAIO:
 
         Has the side effect of setting the current motor speed to 0.
 
-        :param motor_id:  0 - 3
+        :param motor_id:  0 - 7
 
         :param position: Position in steps. This is a 32 bit value
         """
@@ -1848,7 +1848,7 @@ class TelemetrixAIO:
 
         Does not implement accelerations.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param completion_callback: call back function to receive motion complete
                                     notification
@@ -1880,7 +1880,7 @@ class TelemetrixAIO:
         to stop as quickly as possible, using the current speed and
         acceleration parameters.
 
-        :param motor_id:  0 - 3
+        :param motor_id:  0 - 7
         """
         if not self.stepper_info_list[motor_id]['instance']:
             if self.shutdown_on_exception:
@@ -1904,7 +1904,7 @@ class TelemetrixAIO:
         If the enable Pin is defined, sets it to OUTPUT mode and clears
         the pin to disabled.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
         """
         if not self.stepper_info_list[motor_id]['instance']:
             if self.shutdown_on_exception:
@@ -1922,7 +1922,7 @@ class TelemetrixAIO:
         If the enable Pin is defined, sets it to OUTPUT mode and sets
         the pin to enabled.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
         """
         if not self.stepper_info_list[motor_id]['instance']:
             if self.shutdown_on_exception:
@@ -1940,7 +1940,7 @@ class TelemetrixAIO:
 
         Times less than 20 microseconds will usually result in 20 microseconds or so.
 
-        :param motor_id: 0 -3
+        :param motor_id: 0 -7
 
         :param minimum_width: A 16 bit unsigned value expressed in microseconds.
         """
@@ -1971,7 +1971,7 @@ class TelemetrixAIO:
         enableOutputs() is called and switched off when disableOutputs()
         is called.
 
-        :param motor_id: 0 - 4
+        :param motor_id: 0 - 7
         :param pin: 0-0xff
         """
         if not self.stepper_info_list[motor_id]['instance']:
@@ -1993,7 +1993,7 @@ class TelemetrixAIO:
         """
         Sets the inversion for stepper driver pins.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param direction: True=inverted or False
 
@@ -2017,7 +2017,7 @@ class TelemetrixAIO:
         """
         Sets the inversion for 2, 3 and 4 wire stepper pins
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param pin1_invert: True=inverted or False
 
@@ -2045,7 +2045,7 @@ class TelemetrixAIO:
 
         Callback return True if the speed is not zero or not at the target position.
 
-        :param motor_id: 0-4
+        :param motor_id: 0-7
 
         :param callback: required callback function to receive report
 
