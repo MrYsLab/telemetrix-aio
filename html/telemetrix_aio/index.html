@@ -285,7 +285,7 @@ class TelemetrixAIO:
         self.valid_stepper_interfaces = [1, 2, 3, 4, 6, 8]
 
         # maximum number of steppers supported
-        self.max_number_of_steppers = 4
+        self.max_number_of_steppers = 8
 
         # number of steppers created - not to exceed the maximum
         self.number_of_steppers = 0
@@ -307,7 +307,7 @@ class TelemetrixAIO:
             self.stepper_info_list.append(self.stepper_info)
 
         print(f&#39;TelemetrixAIO Version: {PrivateConstants.TELEMETRIX_AIO_VERSION}&#39;)
-        print(f&#39;Copyright (c) 2018-2021 Alan Yorinks All rights reserved.\n&#39;)
+        print(f&#39;Copyright (c) 2018-2023 Alan Yorinks All rights reserved.\n&#39;)
 
         if autostart:
             self.loop.run_until_complete(self.start_aio())
@@ -1116,11 +1116,14 @@ class TelemetrixAIO:
         command = [PrivateConstants.SPI_CS_CONTROL, chip_select_pin, select]
         await self._send_command(command)
 
-    async def spi_read_blocking(self, register_selection, number_of_bytes_to_read,
+    async def spi_read_blocking(self, chip_select, register_selection,
+                                number_of_bytes_to_read,
                           call_back=None):
         &#34;&#34;&#34;
         Read the specified number of bytes from the specified SPI port and
         call the callback function with the reported data.
+
+        :param chip_select: chip select pin
 
         :param register_selection: Register to be selected for read.
 
@@ -1131,8 +1134,8 @@ class TelemetrixAIO:
 
 
         callback returns a data list:
-        [SPI_READ_REPORT, count of data bytes read, data bytes, time-stamp]
-
+            [SPI_READ_REPORT, chip select pin, SPI Register, count of data bytes read,
+             data bytes, time-stamp]
         SPI_READ_REPORT = 13
 
         &#34;&#34;&#34;
@@ -1149,7 +1152,8 @@ class TelemetrixAIO:
 
         self.spi_callback = call_back
 
-        command = [PrivateConstants.SPI_READ_BLOCKING, number_of_bytes_to_read,
+        command = [PrivateConstants.SPI_READ_BLOCKING, chip_select,
+                   number_of_bytes_to_read,
                    register_selection]
 
         await self._send_command(command)
@@ -1160,7 +1164,7 @@ class TelemetrixAIO:
 
         See Arduino SPI reference materials for details.
 
-        :param clock_divisor:
+        :param clock_divisor: 1 - 255
 
         :param bit_order:
 
@@ -1185,13 +1189,22 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError(f&#39;spi_set_format: SPI interface is not enabled.&#39;)
 
+        if not 0 &lt; clock_divisor &lt;= 255:
+            raise RuntimeError(f&#39;spi_set_format: illegal clock divisor selected.&#39;)
+        if bit_order not in [0, 1]:
+            raise RuntimeError(f&#39;spi_set_format: illegal bit_order selected.&#39;)
+        if data_mode not in [0, 4, 8, 12]:
+            raise RuntimeError(f&#39;spi_set_format: illegal data_order selected.&#39;)
+
         command = [PrivateConstants.SPI_SET_FORMAT, clock_divisor, bit_order,
                    data_mode]
         await self._send_command(command)
 
-    async def spi_write_blocking(self, bytes_to_write):
+    async def spi_write_blocking(self, chip_select, bytes_to_write):
         &#34;&#34;&#34;
         Write a list of bytes to the SPI device.
+
+        :param chip_select: chip select pin
 
         :param bytes_to_write: A list of bytes to write. This must
                                 be in the form of a list.
@@ -1208,7 +1221,7 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError(&#39;spi_write_blocking: bytes_to_write must be a list.&#39;)
 
-        command = [PrivateConstants.SPI_WRITE_BLOCKING, len(bytes_to_write)]
+        command = [PrivateConstants.SPI_WRITE_BLOCKING, chip_select, len(bytes_to_write)]
 
         for data in bytes_to_write:
             command.append(data)
@@ -1504,7 +1517,7 @@ class TelemetrixAIO:
         If you are trying to use constant speed movements, you should call setSpeed()
         after calling moveTo().
 
-        :param motor_id: motor id: 0 - 3
+        :param motor_id: motor id: 0 - 7
 
         :param position: target position. Maximum value is 32 bits.
         &#34;&#34;&#34;
@@ -1533,7 +1546,7 @@ class TelemetrixAIO:
         &#34;&#34;&#34;
         Set the target position relative to the current position.
 
-        :param motor_id: motor id: 0 - 3
+        :param motor_id: motor id: 0 - 7
 
         :param relative_position: The desired position relative to the current
                                   position. Negative is anticlockwise from
@@ -1564,7 +1577,7 @@ class TelemetrixAIO:
 
         Once called, the server will continuously attempt to step the motor.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param completion_callback: call back function to receive motion complete
                                     notification
@@ -1597,7 +1610,7 @@ class TelemetrixAIO:
 
         Once called, the server will continuously attempt to step the motor.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
@@ -1619,7 +1632,7 @@ class TelemetrixAIO:
          Caution: Speeds that exceed the maximum speed supported by the processor may
                   result in non-linear accelerations and decelerations.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param max_speed: 1 - 1000
         &#34;&#34;&#34;
@@ -1649,7 +1662,7 @@ class TelemetrixAIO:
 
         Value is stored in the client, so no callback is required.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :return: The currently configured maximum speed.
         &#34;&#34;&#34;
@@ -1664,7 +1677,7 @@ class TelemetrixAIO:
         &#34;&#34;&#34;
         Sets the acceleration/deceleration rate.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param acceleration: The desired acceleration in steps per second
                              per second. Must be &gt; 0.0. This is an
@@ -1697,9 +1710,9 @@ class TelemetrixAIO:
         &#34;&#34;&#34;
         Sets the desired constant speed for use with stepper_run_speed().
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
-        :param speed: 0 - 1000 The desired constant speed in steps per
+        :param speed: -1000 - 1000 The desired constant speed in steps per
                       second. Positive is clockwise. Speeds of more than 1000 steps per
                       second are unreliable. Speed accuracy depends on the Arduino
                       crystal. Jitter depends on how frequently you call the
@@ -1712,18 +1725,29 @@ class TelemetrixAIO:
                 await self.shutdown()
             raise RuntimeError(&#39;stepper_set_speed: Invalid motor_id.&#39;)
 
-        if not 0 &lt; speed &lt;= 1000:
+        if not -1000 &lt;= speed &lt;= 1000:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError(&#39;stepper_set_speed: Speed range is 0 - &#39;
-                               &#39;1000.&#39;)
+            raise RuntimeError(&#39;stepper_set_speed: speed range is -1000 to 1000&#39;)
 
-        self.stepper_info_list[motor_id][&#39;speed&#39;] = speed
+        if speed &lt; 0:
+            polarity = 1
+        else:
+            polarity = 0
 
-        speed_msb = speed &gt;&gt; 8
-        speed_lsb = speed &amp; 0xff
+        speed = abs(speed)
+        if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(&#39;stepper_move: Invalid motor_id.&#39;)
 
-        command = [PrivateConstants.STEPPER_SET_SPEED, motor_id, speed_msb, speed_lsb]
+        position_bytes = list(speed.to_bytes(2, &#39;big&#39;, signed=True))
+
+        command = [PrivateConstants.STEPPER_SET_SPEED, motor_id]
+
+        for value in position_bytes:
+            command.append(value)
+        command.append(polarity)
         await self._send_command(command)
 
     async def stepper_get_speed(self, motor_id):
@@ -1733,7 +1757,7 @@ class TelemetrixAIO:
 
         Value is stored in the client, so no callback is required.
 
-        :param motor_id:  0 - 3
+        :param motor_id:  0 - 7
 
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
@@ -1748,7 +1772,7 @@ class TelemetrixAIO:
         Request the distance from the current position to the target position
         from the server.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param distance_to_go_callback: required callback function to receive report
 
@@ -1777,7 +1801,7 @@ class TelemetrixAIO:
         &#34;&#34;&#34;
         Request the most recently set target position from the server.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param target_callback: required callback function to receive report
 
@@ -1809,7 +1833,7 @@ class TelemetrixAIO:
         &#34;&#34;&#34;
         Request the current motor position from the server.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param current_position_callback: required callback function to receive report
 
@@ -1844,7 +1868,7 @@ class TelemetrixAIO:
 
         Has the side effect of setting the current motor speed to 0.
 
-        :param motor_id:  0 - 3
+        :param motor_id:  0 - 7
 
         :param position: Position in steps. This is a 32 bit value
         &#34;&#34;&#34;
@@ -1867,7 +1891,7 @@ class TelemetrixAIO:
 
         Does not implement accelerations.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param completion_callback: call back function to receive motion complete
                                     notification
@@ -1899,7 +1923,7 @@ class TelemetrixAIO:
         to stop as quickly as possible, using the current speed and
         acceleration parameters.
 
-        :param motor_id:  0 - 3
+        :param motor_id:  0 - 7
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
             if self.shutdown_on_exception:
@@ -1923,7 +1947,7 @@ class TelemetrixAIO:
         If the enable Pin is defined, sets it to OUTPUT mode and clears
         the pin to disabled.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
             if self.shutdown_on_exception:
@@ -1941,7 +1965,7 @@ class TelemetrixAIO:
         If the enable Pin is defined, sets it to OUTPUT mode and sets
         the pin to enabled.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
             if self.shutdown_on_exception:
@@ -1959,7 +1983,7 @@ class TelemetrixAIO:
 
         Times less than 20 microseconds will usually result in 20 microseconds or so.
 
-        :param motor_id: 0 -3
+        :param motor_id: 0 -7
 
         :param minimum_width: A 16 bit unsigned value expressed in microseconds.
         &#34;&#34;&#34;
@@ -1990,7 +2014,7 @@ class TelemetrixAIO:
         enableOutputs() is called and switched off when disableOutputs()
         is called.
 
-        :param motor_id: 0 - 4
+        :param motor_id: 0 - 7
         :param pin: 0-0xff
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
@@ -2012,7 +2036,7 @@ class TelemetrixAIO:
         &#34;&#34;&#34;
         Sets the inversion for stepper driver pins.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param direction: True=inverted or False
 
@@ -2036,7 +2060,7 @@ class TelemetrixAIO:
         &#34;&#34;&#34;
         Sets the inversion for 2, 3 and 4 wire stepper pins
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param pin1_invert: True=inverted or False
 
@@ -2064,7 +2088,7 @@ class TelemetrixAIO:
 
         Callback return True if the speed is not zero or not at the target position.
 
-        :param motor_id: 0-4
+        :param motor_id: 0-7
 
         :param callback: required callback function to receive report
 
@@ -2789,7 +2813,7 @@ error occurs</p></div>
         self.valid_stepper_interfaces = [1, 2, 3, 4, 6, 8]
 
         # maximum number of steppers supported
-        self.max_number_of_steppers = 4
+        self.max_number_of_steppers = 8
 
         # number of steppers created - not to exceed the maximum
         self.number_of_steppers = 0
@@ -2811,7 +2835,7 @@ error occurs</p></div>
             self.stepper_info_list.append(self.stepper_info)
 
         print(f&#39;TelemetrixAIO Version: {PrivateConstants.TELEMETRIX_AIO_VERSION}&#39;)
-        print(f&#39;Copyright (c) 2018-2021 Alan Yorinks All rights reserved.\n&#39;)
+        print(f&#39;Copyright (c) 2018-2023 Alan Yorinks All rights reserved.\n&#39;)
 
         if autostart:
             self.loop.run_until_complete(self.start_aio())
@@ -3620,11 +3644,14 @@ error occurs</p></div>
         command = [PrivateConstants.SPI_CS_CONTROL, chip_select_pin, select]
         await self._send_command(command)
 
-    async def spi_read_blocking(self, register_selection, number_of_bytes_to_read,
+    async def spi_read_blocking(self, chip_select, register_selection,
+                                number_of_bytes_to_read,
                           call_back=None):
         &#34;&#34;&#34;
         Read the specified number of bytes from the specified SPI port and
         call the callback function with the reported data.
+
+        :param chip_select: chip select pin
 
         :param register_selection: Register to be selected for read.
 
@@ -3635,8 +3662,8 @@ error occurs</p></div>
 
 
         callback returns a data list:
-        [SPI_READ_REPORT, count of data bytes read, data bytes, time-stamp]
-
+            [SPI_READ_REPORT, chip select pin, SPI Register, count of data bytes read,
+             data bytes, time-stamp]
         SPI_READ_REPORT = 13
 
         &#34;&#34;&#34;
@@ -3653,7 +3680,8 @@ error occurs</p></div>
 
         self.spi_callback = call_back
 
-        command = [PrivateConstants.SPI_READ_BLOCKING, number_of_bytes_to_read,
+        command = [PrivateConstants.SPI_READ_BLOCKING, chip_select,
+                   number_of_bytes_to_read,
                    register_selection]
 
         await self._send_command(command)
@@ -3664,7 +3692,7 @@ error occurs</p></div>
 
         See Arduino SPI reference materials for details.
 
-        :param clock_divisor:
+        :param clock_divisor: 1 - 255
 
         :param bit_order:
 
@@ -3689,13 +3717,22 @@ error occurs</p></div>
                 await self.shutdown()
             raise RuntimeError(f&#39;spi_set_format: SPI interface is not enabled.&#39;)
 
+        if not 0 &lt; clock_divisor &lt;= 255:
+            raise RuntimeError(f&#39;spi_set_format: illegal clock divisor selected.&#39;)
+        if bit_order not in [0, 1]:
+            raise RuntimeError(f&#39;spi_set_format: illegal bit_order selected.&#39;)
+        if data_mode not in [0, 4, 8, 12]:
+            raise RuntimeError(f&#39;spi_set_format: illegal data_order selected.&#39;)
+
         command = [PrivateConstants.SPI_SET_FORMAT, clock_divisor, bit_order,
                    data_mode]
         await self._send_command(command)
 
-    async def spi_write_blocking(self, bytes_to_write):
+    async def spi_write_blocking(self, chip_select, bytes_to_write):
         &#34;&#34;&#34;
         Write a list of bytes to the SPI device.
+
+        :param chip_select: chip select pin
 
         :param bytes_to_write: A list of bytes to write. This must
                                 be in the form of a list.
@@ -3712,7 +3749,7 @@ error occurs</p></div>
                 await self.shutdown()
             raise RuntimeError(&#39;spi_write_blocking: bytes_to_write must be a list.&#39;)
 
-        command = [PrivateConstants.SPI_WRITE_BLOCKING, len(bytes_to_write)]
+        command = [PrivateConstants.SPI_WRITE_BLOCKING, chip_select, len(bytes_to_write)]
 
         for data in bytes_to_write:
             command.append(data)
@@ -4008,7 +4045,7 @@ error occurs</p></div>
         If you are trying to use constant speed movements, you should call setSpeed()
         after calling moveTo().
 
-        :param motor_id: motor id: 0 - 3
+        :param motor_id: motor id: 0 - 7
 
         :param position: target position. Maximum value is 32 bits.
         &#34;&#34;&#34;
@@ -4037,7 +4074,7 @@ error occurs</p></div>
         &#34;&#34;&#34;
         Set the target position relative to the current position.
 
-        :param motor_id: motor id: 0 - 3
+        :param motor_id: motor id: 0 - 7
 
         :param relative_position: The desired position relative to the current
                                   position. Negative is anticlockwise from
@@ -4068,7 +4105,7 @@ error occurs</p></div>
 
         Once called, the server will continuously attempt to step the motor.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param completion_callback: call back function to receive motion complete
                                     notification
@@ -4101,7 +4138,7 @@ error occurs</p></div>
 
         Once called, the server will continuously attempt to step the motor.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
@@ -4123,7 +4160,7 @@ error occurs</p></div>
          Caution: Speeds that exceed the maximum speed supported by the processor may
                   result in non-linear accelerations and decelerations.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param max_speed: 1 - 1000
         &#34;&#34;&#34;
@@ -4153,7 +4190,7 @@ error occurs</p></div>
 
         Value is stored in the client, so no callback is required.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :return: The currently configured maximum speed.
         &#34;&#34;&#34;
@@ -4168,7 +4205,7 @@ error occurs</p></div>
         &#34;&#34;&#34;
         Sets the acceleration/deceleration rate.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param acceleration: The desired acceleration in steps per second
                              per second. Must be &gt; 0.0. This is an
@@ -4201,9 +4238,9 @@ error occurs</p></div>
         &#34;&#34;&#34;
         Sets the desired constant speed for use with stepper_run_speed().
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
-        :param speed: 0 - 1000 The desired constant speed in steps per
+        :param speed: -1000 - 1000 The desired constant speed in steps per
                       second. Positive is clockwise. Speeds of more than 1000 steps per
                       second are unreliable. Speed accuracy depends on the Arduino
                       crystal. Jitter depends on how frequently you call the
@@ -4216,18 +4253,29 @@ error occurs</p></div>
                 await self.shutdown()
             raise RuntimeError(&#39;stepper_set_speed: Invalid motor_id.&#39;)
 
-        if not 0 &lt; speed &lt;= 1000:
+        if not -1000 &lt;= speed &lt;= 1000:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError(&#39;stepper_set_speed: Speed range is 0 - &#39;
-                               &#39;1000.&#39;)
+            raise RuntimeError(&#39;stepper_set_speed: speed range is -1000 to 1000&#39;)
 
-        self.stepper_info_list[motor_id][&#39;speed&#39;] = speed
+        if speed &lt; 0:
+            polarity = 1
+        else:
+            polarity = 0
 
-        speed_msb = speed &gt;&gt; 8
-        speed_lsb = speed &amp; 0xff
+        speed = abs(speed)
+        if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError(&#39;stepper_move: Invalid motor_id.&#39;)
 
-        command = [PrivateConstants.STEPPER_SET_SPEED, motor_id, speed_msb, speed_lsb]
+        position_bytes = list(speed.to_bytes(2, &#39;big&#39;, signed=True))
+
+        command = [PrivateConstants.STEPPER_SET_SPEED, motor_id]
+
+        for value in position_bytes:
+            command.append(value)
+        command.append(polarity)
         await self._send_command(command)
 
     async def stepper_get_speed(self, motor_id):
@@ -4237,7 +4285,7 @@ error occurs</p></div>
 
         Value is stored in the client, so no callback is required.
 
-        :param motor_id:  0 - 3
+        :param motor_id:  0 - 7
 
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
@@ -4252,7 +4300,7 @@ error occurs</p></div>
         Request the distance from the current position to the target position
         from the server.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param distance_to_go_callback: required callback function to receive report
 
@@ -4281,7 +4329,7 @@ error occurs</p></div>
         &#34;&#34;&#34;
         Request the most recently set target position from the server.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param target_callback: required callback function to receive report
 
@@ -4313,7 +4361,7 @@ error occurs</p></div>
         &#34;&#34;&#34;
         Request the current motor position from the server.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param current_position_callback: required callback function to receive report
 
@@ -4348,7 +4396,7 @@ error occurs</p></div>
 
         Has the side effect of setting the current motor speed to 0.
 
-        :param motor_id:  0 - 3
+        :param motor_id:  0 - 7
 
         :param position: Position in steps. This is a 32 bit value
         &#34;&#34;&#34;
@@ -4371,7 +4419,7 @@ error occurs</p></div>
 
         Does not implement accelerations.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param completion_callback: call back function to receive motion complete
                                     notification
@@ -4403,7 +4451,7 @@ error occurs</p></div>
         to stop as quickly as possible, using the current speed and
         acceleration parameters.
 
-        :param motor_id:  0 - 3
+        :param motor_id:  0 - 7
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
             if self.shutdown_on_exception:
@@ -4427,7 +4475,7 @@ error occurs</p></div>
         If the enable Pin is defined, sets it to OUTPUT mode and clears
         the pin to disabled.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
             if self.shutdown_on_exception:
@@ -4445,7 +4493,7 @@ error occurs</p></div>
         If the enable Pin is defined, sets it to OUTPUT mode and sets
         the pin to enabled.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
             if self.shutdown_on_exception:
@@ -4463,7 +4511,7 @@ error occurs</p></div>
 
         Times less than 20 microseconds will usually result in 20 microseconds or so.
 
-        :param motor_id: 0 -3
+        :param motor_id: 0 -7
 
         :param minimum_width: A 16 bit unsigned value expressed in microseconds.
         &#34;&#34;&#34;
@@ -4494,7 +4542,7 @@ error occurs</p></div>
         enableOutputs() is called and switched off when disableOutputs()
         is called.
 
-        :param motor_id: 0 - 4
+        :param motor_id: 0 - 7
         :param pin: 0-0xff
         &#34;&#34;&#34;
         if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
@@ -4516,7 +4564,7 @@ error occurs</p></div>
         &#34;&#34;&#34;
         Sets the inversion for stepper driver pins.
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param direction: True=inverted or False
 
@@ -4540,7 +4588,7 @@ error occurs</p></div>
         &#34;&#34;&#34;
         Sets the inversion for 2, 3 and 4 wire stepper pins
 
-        :param motor_id: 0 - 3
+        :param motor_id: 0 - 7
 
         :param pin1_invert: True=inverted or False
 
@@ -4568,7 +4616,7 @@ error occurs</p></div>
 
         Callback return True if the speed is not zero or not at the target position.
 
-        :param motor_id: 0-4
+        :param motor_id: 0-7
 
         :param callback: required callback function to receive report
 
@@ -6462,27 +6510,32 @@ If any exceptions are thrown, they are ignored.</p></div>
 </details>
 </dd>
 <dt id="telemetrix_aio.telemetrix_aio.TelemetrixAIO.spi_read_blocking"><code class="name flex">
-<span>async def <span class="ident">spi_read_blocking</span></span>(<span>self, register_selection, number_of_bytes_to_read, call_back=None)</span>
+<span>async def <span class="ident">spi_read_blocking</span></span>(<span>self, chip_select, register_selection, number_of_bytes_to_read, call_back=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Read the specified number of bytes from the specified SPI port and
 call the callback function with the reported data.</p>
+<p>:param chip_select: chip select pin</p>
 <p>:param register_selection: Register to be selected for read.</p>
 <p>:param number_of_bytes_to_read: Number of bytes to read</p>
 <p>:param call_back: Required callback function to report spi data as a
 result of read command</p>
 <p>callback returns a data list:
-[SPI_READ_REPORT, count of data bytes read, data bytes, time-stamp]</p>
-<p>SPI_READ_REPORT = 13</p></div>
+[SPI_READ_REPORT, chip select pin, SPI Register, count of data bytes read,
+data bytes, time-stamp]
+SPI_READ_REPORT = 13</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">async def spi_read_blocking(self, register_selection, number_of_bytes_to_read,
+<pre><code class="python">async def spi_read_blocking(self, chip_select, register_selection,
+                            number_of_bytes_to_read,
                       call_back=None):
     &#34;&#34;&#34;
     Read the specified number of bytes from the specified SPI port and
     call the callback function with the reported data.
+
+    :param chip_select: chip select pin
 
     :param register_selection: Register to be selected for read.
 
@@ -6493,8 +6546,8 @@ result of read command</p>
 
 
     callback returns a data list:
-    [SPI_READ_REPORT, count of data bytes read, data bytes, time-stamp]
-
+        [SPI_READ_REPORT, chip select pin, SPI Register, count of data bytes read,
+         data bytes, time-stamp]
     SPI_READ_REPORT = 13
 
     &#34;&#34;&#34;
@@ -6511,7 +6564,8 @@ result of read command</p>
 
     self.spi_callback = call_back
 
-    command = [PrivateConstants.SPI_READ_BLOCKING, number_of_bytes_to_read,
+    command = [PrivateConstants.SPI_READ_BLOCKING, chip_select,
+               number_of_bytes_to_read,
                register_selection]
 
     await self._send_command(command)</code></pre>
@@ -6523,7 +6577,7 @@ result of read command</p>
 <dd>
 <div class="desc"><p>Configure how the SPI serializes and de-serializes data on the wire.</p>
 <p>See Arduino SPI reference materials for details.</p>
-<p>:param clock_divisor:</p>
+<p>:param clock_divisor: 1 - 255</p>
 <p>:param bit_order:</p>
 <pre><code>                LSBFIRST = 0
 
@@ -6548,7 +6602,7 @@ result of read command</p>
 
     See Arduino SPI reference materials for details.
 
-    :param clock_divisor:
+    :param clock_divisor: 1 - 255
 
     :param bit_order:
 
@@ -6573,25 +6627,35 @@ result of read command</p>
             await self.shutdown()
         raise RuntimeError(f&#39;spi_set_format: SPI interface is not enabled.&#39;)
 
+    if not 0 &lt; clock_divisor &lt;= 255:
+        raise RuntimeError(f&#39;spi_set_format: illegal clock divisor selected.&#39;)
+    if bit_order not in [0, 1]:
+        raise RuntimeError(f&#39;spi_set_format: illegal bit_order selected.&#39;)
+    if data_mode not in [0, 4, 8, 12]:
+        raise RuntimeError(f&#39;spi_set_format: illegal data_order selected.&#39;)
+
     command = [PrivateConstants.SPI_SET_FORMAT, clock_divisor, bit_order,
                data_mode]
     await self._send_command(command)</code></pre>
 </details>
 </dd>
 <dt id="telemetrix_aio.telemetrix_aio.TelemetrixAIO.spi_write_blocking"><code class="name flex">
-<span>async def <span class="ident">spi_write_blocking</span></span>(<span>self, bytes_to_write)</span>
+<span>async def <span class="ident">spi_write_blocking</span></span>(<span>self, chip_select, bytes_to_write)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write a list of bytes to the SPI device.</p>
+<p>:param chip_select: chip select pin</p>
 <p>:param bytes_to_write: A list of bytes to write. This must
 be in the form of a list.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">async def spi_write_blocking(self, bytes_to_write):
+<pre><code class="python">async def spi_write_blocking(self, chip_select, bytes_to_write):
     &#34;&#34;&#34;
     Write a list of bytes to the SPI device.
+
+    :param chip_select: chip select pin
 
     :param bytes_to_write: A list of bytes to write. This must
                             be in the form of a list.
@@ -6608,7 +6672,7 @@ be in the form of a list.</p></div>
             await self.shutdown()
         raise RuntimeError(&#39;spi_write_blocking: bytes_to_write must be a list.&#39;)
 
-    command = [PrivateConstants.SPI_WRITE_BLOCKING, len(bytes_to_write)]
+    command = [PrivateConstants.SPI_WRITE_BLOCKING, chip_select, len(bytes_to_write)]
 
     for data in bytes_to_write:
         command.append(data)
@@ -6722,7 +6786,7 @@ during sleep and then re-enable with enableOutputs() before stepping
 again.</p>
 <p>If the enable Pin is defined, sets it to OUTPUT mode and clears
 the pin to disabled.</p>
-<p>:param motor_id: 0 - 3</p></div>
+<p>:param motor_id: 0 - 7</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6741,7 +6805,7 @@ the pin to disabled.</p>
     If the enable Pin is defined, sets it to OUTPUT mode and clears
     the pin to disabled.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
     &#34;&#34;&#34;
     if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
         if self.shutdown_on_exception:
@@ -6760,7 +6824,7 @@ the pin to disabled.</p>
 mode.</p>
 <p>If the enable Pin is defined, sets it to OUTPUT mode and sets
 the pin to enabled.</p>
-<p>:param motor_id: 0 - 3</p></div>
+<p>:param motor_id: 0 - 7</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6773,7 +6837,7 @@ the pin to enabled.</p>
     If the enable Pin is defined, sets it to OUTPUT mode and sets
     the pin to enabled.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
     &#34;&#34;&#34;
     if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
         if self.shutdown_on_exception:
@@ -6789,7 +6853,7 @@ the pin to enabled.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Request the current motor position from the server.</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:param current_position_callback: required callback function to receive report</p>
 <p>:return: The current motor position returned via the callback as a list:</p>
 <p>[REPORT_TYPE=17, motor_id, current position in steps, time_stamp]</p>
@@ -6802,7 +6866,7 @@ the pin to enabled.</p>
     &#34;&#34;&#34;
     Request the current motor position from the server.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :param current_position_callback: required callback function to receive report
 
@@ -6835,7 +6899,7 @@ the pin to enabled.</p>
 <dd>
 <div class="desc"><p>Request the distance from the current position to the target position
 from the server.</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:param distance_to_go_callback: required callback function to receive report</p>
 <p>:return: The distance to go is returned via the callback as a list:</p>
 <p>[REPORT_TYPE=15, motor_id, distance in steps, time_stamp]</p>
@@ -6849,7 +6913,7 @@ from the server.</p>
     Request the distance from the current position to the target position
     from the server.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :param distance_to_go_callback: required callback function to receive report
 
@@ -6882,7 +6946,7 @@ from the server.</p>
 <div class="desc"><p>Returns the maximum speed configured for this stepper
 that was previously set by stepper_set_max_speed()</p>
 <p>Value is stored in the client, so no callback is required.</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:return: The currently configured maximum speed.</p></div>
 <details class="source">
 <summary>
@@ -6895,7 +6959,7 @@ that was previously set by stepper_set_max_speed()</p>
 
     Value is stored in the client, so no callback is required.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :return: The currently configured maximum speed.
     &#34;&#34;&#34;
@@ -6916,7 +6980,7 @@ most recently set speed.
 that was previously set by stepper_set_speed();</p>
 <p>Value is stored in the client, so no callback is required.</p>
 <p>:param motor_id:
-0 - 3</p></div>
+0 - 7</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6928,7 +6992,7 @@ that was previously set by stepper_set_speed();</p>
 
     Value is stored in the client, so no callback is required.
 
-    :param motor_id:  0 - 3
+    :param motor_id:  0 - 7
 
     &#34;&#34;&#34;
     if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
@@ -6944,7 +7008,7 @@ that was previously set by stepper_set_speed();</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Request the most recently set target position from the server.</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:param target_callback: required callback function to receive report</p>
 <p>:return: The distance to go is returned via the callback as a list:</p>
 <p>[REPORT_TYPE=16, motor_id, target position in steps, time_stamp]</p>
@@ -6957,7 +7021,7 @@ that was previously set by stepper_set_speed();</p>
     &#34;&#34;&#34;
     Request the most recently set target position from the server.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :param target_callback: required callback function to receive report
 
@@ -6992,7 +7056,7 @@ that was previously set by stepper_set_speed();</p>
 <dd>
 <div class="desc"><p>Checks to see if the motor is currently running to a target.</p>
 <p>Callback return True if the speed is not zero or not at the target position.</p>
-<p>:param motor_id: 0-4</p>
+<p>:param motor_id: 0-7</p>
 <p>:param callback: required callback function to receive report</p>
 <p>:return: The current running state returned via the callback as a list:</p>
 <p>[REPORT_TYPE=18, motor_id, True or False for running state, time_stamp]</p></div>
@@ -7006,7 +7070,7 @@ that was previously set by stepper_set_speed();</p>
 
     Callback return True if the speed is not zero or not at the target position.
 
-    :param motor_id: 0-4
+    :param motor_id: 0-7
 
     :param callback: required callback function to receive report
 
@@ -7036,7 +7100,7 @@ that was previously set by stepper_set_speed();</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set the target position relative to the current position.</p>
-<p>:param motor_id: motor id: 0 - 3</p>
+<p>:param motor_id: motor id: 0 - 7</p>
 <p>:param relative_position: The desired position relative to the current
 position. Negative is anticlockwise from
 the current position. Maximum value is 32 bits.</p></div>
@@ -7048,7 +7112,7 @@ the current position. Maximum value is 32 bits.</p></div>
     &#34;&#34;&#34;
     Set the target position relative to the current position.
 
-    :param motor_id: motor id: 0 - 3
+    :param motor_id: motor id: 0 - 7
 
     :param relative_position: The desired position relative to the current
                               position. Negative is anticlockwise from
@@ -7086,7 +7150,7 @@ recent call to this function. Caution: moveTo() also recalculates the
 speed for the next step.
 If you are trying to use constant speed movements, you should call setSpeed()
 after calling moveTo().</p>
-<p>:param motor_id: motor id: 0 - 3</p>
+<p>:param motor_id: motor id: 0 - 7</p>
 <p>:param position: target position. Maximum value is 32 bits.</p></div>
 <details class="source">
 <summary>
@@ -7104,7 +7168,7 @@ after calling moveTo().</p>
     If you are trying to use constant speed movements, you should call setSpeed()
     after calling moveTo().
 
-    :param motor_id: motor id: 0 - 3
+    :param motor_id: motor id: 0 - 7
 
     :param position: target position. Maximum value is 32 bits.
     &#34;&#34;&#34;
@@ -7136,7 +7200,7 @@ after calling moveTo().</p>
 <dd>
 <div class="desc"><p>This method steps the selected motor based on the current speed.</p>
 <p>Once called, the server will continuously attempt to step the motor.</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:param completion_callback: call back function to receive motion complete
 notification</p>
 <p>callback returns a data list:</p>
@@ -7152,7 +7216,7 @@ notification</p>
 
     Once called, the server will continuously attempt to step the motor.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :param completion_callback: call back function to receive motion complete
                                 notification
@@ -7186,7 +7250,7 @@ notification</p>
 <div class="desc"><p>This method steps the selected motor based at a constant speed as set by the most
 recent call to stepper_set_max_speed(). The motor will run continuously.</p>
 <p>Once called, the server will continuously attempt to step the motor.</p>
-<p>:param motor_id: 0 - 3</p></div>
+<p>:param motor_id: 0 - 7</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7198,7 +7262,7 @@ recent call to stepper_set_max_speed(). The motor will run continuously.</p>
 
     Once called, the server will continuously attempt to step the motor.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     &#34;&#34;&#34;
     if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
@@ -7217,7 +7281,7 @@ recent call to stepper_set_max_speed(). The motor will run continuously.</p>
 <div class="desc"><p>Runs the motor at the currently selected speed until the target position is
 reached.</p>
 <p>Does not implement accelerations.</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:param completion_callback: call back function to receive motion complete
 notification</p>
 <p>callback returns a data list:</p>
@@ -7234,7 +7298,7 @@ notification</p>
 
     Does not implement accelerations.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :param completion_callback: call back function to receive motion complete
                                 notification
@@ -7266,7 +7330,7 @@ notification</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Sets the inversion for stepper driver pins.</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:param direction: True=inverted or False</p>
 <p>:param step: True=inverted or False</p>
 <p>:param enable: True=inverted or False</p></div>
@@ -7279,7 +7343,7 @@ notification</p>
     &#34;&#34;&#34;
     Sets the inversion for stepper driver pins.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :param direction: True=inverted or False
 
@@ -7303,7 +7367,7 @@ notification</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Sets the inversion for 2, 3 and 4 wire stepper pins</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:param pin1_invert: True=inverted or False</p>
 <p>:param pin2_invert: True=inverted or False</p>
 <p>:param pin3_invert: True=inverted or False</p>
@@ -7319,7 +7383,7 @@ notification</p>
     &#34;&#34;&#34;
     Sets the inversion for 2, 3 and 4 wire stepper pins
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :param pin1_invert: True=inverted or False
 
@@ -7347,7 +7411,7 @@ notification</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Sets the acceleration/deceleration rate.</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:param acceleration: The desired acceleration in steps per second
 per second. Must be &gt; 0.0. This is an
 expensive call since it requires a square
@@ -7361,7 +7425,7 @@ Dont call more often than needed.</p></div>
     &#34;&#34;&#34;
     Sets the acceleration/deceleration rate.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :param acceleration: The desired acceleration in steps per second
                          per second. Must be &gt; 0.0. This is an
@@ -7401,7 +7465,7 @@ for setting a zero position on a stepper after an initial hardware
 positioning move.</p>
 <p>Has the side effect of setting the current motor speed to 0.</p>
 <p>:param motor_id:
-0 - 3</p>
+0 - 7</p>
 <p>:param position: Position in steps. This is a 32 bit value</p></div>
 <details class="source">
 <summary>
@@ -7416,7 +7480,7 @@ positioning move.</p>
 
     Has the side effect of setting the current motor speed to 0.
 
-    :param motor_id:  0 - 3
+    :param motor_id:  0 - 7
 
     :param position: Position in steps. This is a 32 bit value
     &#34;&#34;&#34;
@@ -7442,7 +7506,7 @@ positioning move.</p>
 <p>Otherwise, if a pin is set, the pin will be turned on when
 enableOutputs() is called and switched off when disableOutputs()
 is called.</p>
-<p>:param motor_id: 0 - 4
+<p>:param motor_id: 0 - 7
 :param pin: 0-0xff</p></div>
 <details class="source">
 <summary>
@@ -7457,7 +7521,7 @@ is called.</p>
     enableOutputs() is called and switched off when disableOutputs()
     is called.
 
-    :param motor_id: 0 - 4
+    :param motor_id: 0 - 7
     :param pin: 0-0xff
     &#34;&#34;&#34;
     if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
@@ -7485,7 +7549,7 @@ up to the speed set by this function.</p>
 The default maxSpeed is 1 step per second.</p>
 <p>Caution: Speeds that exceed the maximum speed supported by the processor may
 result in non-linear accelerations and decelerations.</p>
-<p>:param motor_id: 0 - 3</p>
+<p>:param motor_id: 0 - 7</p>
 <p>:param max_speed: 1 - 1000</p></div>
 <details class="source">
 <summary>
@@ -7502,7 +7566,7 @@ result in non-linear accelerations and decelerations.</p>
      Caution: Speeds that exceed the maximum speed supported by the processor may
               result in non-linear accelerations and decelerations.
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
     :param max_speed: 1 - 1000
     &#34;&#34;&#34;
@@ -7533,7 +7597,7 @@ result in non-linear accelerations and decelerations.</p>
 <div class="desc"><p>Sets the minimum pulse width allowed by the stepper driver.</p>
 <p>The minimum practical pulse width is approximately 20 microseconds.</p>
 <p>Times less than 20 microseconds will usually result in 20 microseconds or so.</p>
-<p>:param motor_id: 0 -3</p>
+<p>:param motor_id: 0 -7</p>
 <p>:param minimum_width: A 16 bit unsigned value expressed in microseconds.</p></div>
 <details class="source">
 <summary>
@@ -7547,7 +7611,7 @@ result in non-linear accelerations and decelerations.</p>
 
     Times less than 20 microseconds will usually result in 20 microseconds or so.
 
-    :param motor_id: 0 -3
+    :param motor_id: 0 -7
 
     :param minimum_width: A 16 bit unsigned value expressed in microseconds.
     &#34;&#34;&#34;
@@ -7575,8 +7639,8 @@ result in non-linear accelerations and decelerations.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Sets the desired constant speed for use with stepper_run_speed().</p>
-<p>:param motor_id: 0 - 3</p>
-<p>:param speed: 0 - 1000 The desired constant speed in steps per
+<p>:param motor_id: 0 - 7</p>
+<p>:param speed: -1000 - 1000 The desired constant speed in steps per
 second. Positive is clockwise. Speeds of more than 1000 steps per
 second are unreliable. Speed accuracy depends on the Arduino
 crystal. Jitter depends on how frequently you call the
@@ -7591,9 +7655,9 @@ stepper_set_max_speed().</p></div>
     &#34;&#34;&#34;
     Sets the desired constant speed for use with stepper_run_speed().
 
-    :param motor_id: 0 - 3
+    :param motor_id: 0 - 7
 
-    :param speed: 0 - 1000 The desired constant speed in steps per
+    :param speed: -1000 - 1000 The desired constant speed in steps per
                   second. Positive is clockwise. Speeds of more than 1000 steps per
                   second are unreliable. Speed accuracy depends on the Arduino
                   crystal. Jitter depends on how frequently you call the
@@ -7606,18 +7670,29 @@ stepper_set_max_speed().</p></div>
             await self.shutdown()
         raise RuntimeError(&#39;stepper_set_speed: Invalid motor_id.&#39;)
 
-    if not 0 &lt; speed &lt;= 1000:
+    if not -1000 &lt;= speed &lt;= 1000:
         if self.shutdown_on_exception:
             await self.shutdown()
-        raise RuntimeError(&#39;stepper_set_speed: Speed range is 0 - &#39;
-                           &#39;1000.&#39;)
+        raise RuntimeError(&#39;stepper_set_speed: speed range is -1000 to 1000&#39;)
 
-    self.stepper_info_list[motor_id][&#39;speed&#39;] = speed
+    if speed &lt; 0:
+        polarity = 1
+    else:
+        polarity = 0
 
-    speed_msb = speed &gt;&gt; 8
-    speed_lsb = speed &amp; 0xff
+    speed = abs(speed)
+    if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
+        if self.shutdown_on_exception:
+            await self.shutdown()
+        raise RuntimeError(&#39;stepper_move: Invalid motor_id.&#39;)
 
-    command = [PrivateConstants.STEPPER_SET_SPEED, motor_id, speed_msb, speed_lsb]
+    position_bytes = list(speed.to_bytes(2, &#39;big&#39;, signed=True))
+
+    command = [PrivateConstants.STEPPER_SET_SPEED, motor_id]
+
+    for value in position_bytes:
+        command.append(value)
+    command.append(polarity)
     await self._send_command(command)</code></pre>
 </details>
 </dd>
@@ -7629,7 +7704,7 @@ stepper_set_max_speed().</p></div>
 to stop as quickly as possible, using the current speed and
 acceleration parameters.</p>
 <p>:param motor_id:
-0 - 3</p></div>
+0 - 7</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7640,7 +7715,7 @@ acceleration parameters.</p>
     to stop as quickly as possible, using the current speed and
     acceleration parameters.
 
-    :param motor_id:  0 - 3
+    :param motor_id:  0 - 7
     &#34;&#34;&#34;
     if not self.stepper_info_list[motor_id][&#39;instance&#39;]:
         if self.shutdown_on_exception:
