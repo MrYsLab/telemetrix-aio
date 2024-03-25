@@ -261,7 +261,7 @@ class TelemetrixAIO:
         self.stepper_info_list = []
         # a list of dictionaries to hold stepper information
         for motor in range(self.max_number_of_steppers):
-            self.stepper_info_list.append(self.stepper_info)
+            self.stepper_info_list.append(self.stepper_info.copy())
 
         print(f'TelemetrixAIO Version: {PrivateConstants.TELEMETRIX_AIO_VERSION}')
         print(f'Copyright (c) 2018-2023 Alan Yorinks All rights reserved.\n')
@@ -947,7 +947,7 @@ class TelemetrixAIO:
         """
         if self.reported_features & PrivateConstants.SPI_FEATURE:
 
-            if type(chip_select_list) != list:
+            if type(chip_select_list) is not list:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError('chip_select_list must be in the form of a list')
