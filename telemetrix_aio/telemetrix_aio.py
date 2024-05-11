@@ -510,8 +510,8 @@ class TelemetrixAIO:
 
         callback returns a data list:
 
-        [I2C_READ_REPORT, address, register, count of data bytes,
-         data bytes, time-stamp]
+         [I2C_READ_REPORT, i2c_port, number of bytes read, address, register,
+          bytes read..., time-stamp]
 
         """
         if not callback:
@@ -551,8 +551,8 @@ class TelemetrixAIO:
 
         callback returns a data list:
 
-        [I2C_READ_REPORT, address, register, count of data bytes,
-         data bytes, time-stamp]
+         [I2C_READ_REPORT, i2c_port, number of bytes read, address, register,
+          bytes read..., time-stamp]
 
         """
         if not callback:
