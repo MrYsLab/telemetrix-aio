@@ -56,7 +56,7 @@ class TelemetrixAioSocket:
         :return: None
         """
         # we need to convert data formats,
-        # so all of the below.
+        # so we do all below.
         output_list = []
 
         # create an array of integers from the data to be sent
