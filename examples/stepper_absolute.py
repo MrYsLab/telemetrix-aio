@@ -42,7 +42,7 @@ async def running_callback(data):
 async def step_absolute(the_board):
 
     # create an accelstepper instance for a TB6600 motor driver
-    motor = await the_board.set_pin_mode_stepper(interface=2, pin1=8, pin2=9)
+    motor = await the_board.set_pin_mode_stepper(interface=1, pin1=8, pin2=9)
 
     # if you are using a 28BYJ-48 Stepper Motor with ULN2003
     # comment out the line above and uncomment out the line below.
