@@ -102,10 +102,9 @@ class PrivateConstants:
     STEPPER_RUN_COMPLETE_REPORT = 19
     FEATURES = 20
 
-
     DEBUG_PRINT = 99
 
-    TELEMETRIX_AIO_VERSION = "1.24"
+    TELEMETRIX_AIO_VERSION = "1.25"
 
     # reporting control
     REPORTING_DISABLE_ALL = 0
@@ -136,7 +135,7 @@ class PrivateConstants:
     # maximum number of DHT devices allowed
     MAX_DHTS = 6
 
-    # DHT Report sub-types
+    # DHT Report subtypes
     DHT_DATA = 0
     DHT_ERROR = 1
 

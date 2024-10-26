@@ -1074,8 +1074,8 @@ class TelemetrixAIO:
         await self._send_command(command)
 
     async def spi_read_blocking(self, chip_select, register_selection,
-                                number_of_bytes_to_read,
-                          call_back=None):
+                                number_of_bytes_to_read, call_back=None,
+                                enable_read_bit=True):
         """
         Read the specified number of bytes from the specified SPI port and
         call the callback function with the reported data.
@@ -1088,6 +1088,10 @@ class TelemetrixAIO:
 
         :param call_back: Required callback function to report spi data as a
                    result of read command
+
+       :param enable_read_bit: Many SPI devices require that the register
+                                selection be OR'ed with 0x80. If set to True
+                                the bit will be set.
 
 
         callback returns a data list:
@@ -1111,7 +1115,8 @@ class TelemetrixAIO:
 
         command = [PrivateConstants.SPI_READ_BLOCKING, chip_select,
                    number_of_bytes_to_read,
-                   register_selection]
+                   register_selection,
+                   enable_read_bit]
 
         await self._send_command(command)
 
