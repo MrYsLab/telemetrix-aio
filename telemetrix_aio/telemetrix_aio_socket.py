@@ -1,6 +1,6 @@
 
 """
- Copyright (c) 2020 Alan Yorinks All rights reserved.
+ Copyright (c) 2020-2024 Alan Yorinks All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
