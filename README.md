@@ -36,13 +36,16 @@ application and C++ servers that communicate with the Python client over a seria
 
 This repository is the Python 3 asyncio client API.
 
-The server for Arduino serial linked devices is called
+The server for Arduino serial-linked devices is called
 [Telemetrix4Arduino](https://github.com/MrYsLab/Telemetrix4Arduino).
 
 The WiFi server for ESP8266 devices is called
 [Telemetrix4Esp8266](https://github.com/MrYsLab/Telemetrix4Esp8266).
 
 A [User's Guide](https://mryslab.github.io/telemetrix/) explaining installation and use is available online.
+
+If you wish to extend Telemetrix's capabilities, a tutorial on how to do so is 
+[available](https://mryslab.github.io/bits-n-bots/2025/05/20/telemetrix-under-the-hood--part-1/).
 
 
 
