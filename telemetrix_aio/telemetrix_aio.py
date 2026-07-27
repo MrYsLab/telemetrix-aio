@@ -153,8 +153,6 @@ class TelemetrixAIO:
         # reported features
         self.reported_features = 0
 
-        self.features_parsed = asyncio.Event()
-
         # To add a command to the command dispatch table, append here.
         self.report_dispatch.update(
             {PrivateConstants.LOOP_COMMAND: self._report_loop_data})
@@ -343,12 +341,7 @@ class TelemetrixAIO:
             # get the features list
             command = [PrivateConstants.GET_FEATURES]
             await self._send_command(command)
-            # Wait deterministically for the dispatcher to parse the report
-            # We add a timeout just in case the board drops the message
-            try:
-                await asyncio.wait_for(self.features_parsed.wait(), timeout=2.0)
-            except asyncio.TimeoutError:
-                print("Warning: Timed out waiting for GET_FEATURES report")
+            time.sleep(.5)
 
             # Have the server reset its data structures
             command = [PrivateConstants.RESET]
