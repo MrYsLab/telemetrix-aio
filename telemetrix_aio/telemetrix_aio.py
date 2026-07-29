@@ -148,6 +148,12 @@ class TelemetrixAIO:
         # flag to indicate we are in shutdown mode
         self.shutdown_flag = False
 
+        # Tracks specific events (e.g., {"GET_FEATURES": True})
+        self._confirmation_state = {}
+
+        # How long to wait for a confirmation (seconds)
+        self.wait_timeout = 5
+
         self.report_dispatch = {}
 
         # reported features
@@ -346,6 +352,10 @@ class TelemetrixAIO:
             # Have the server reset its data structures
             command = [PrivateConstants.RESET]
             await self._send_command(command)
+
+            print("Waiting for GET_FEATURES confirmation...")  # Added logging
+            await self._wait_for_confirmation(PrivateConstants.FEATURES)
+            # This line now waits until the background dispatcher confirms the report was processed.
 
     async def get_event_loop(self):
         """
@@ -2197,9 +2207,31 @@ class TelemetrixAIO:
             await self.report_dispatch[report](packet[1:])
             await asyncio.sleep(self.sleep_tune)
 
-    '''
+    async def _wait_for_confirmation(self, expected_report_id: int) -> bool:
+        """
+        Waits asynchronously for the background dispatcher to process and confirm
+        receipt of a specific report ID (e.g., GET_FEATURES).
+
+        Returns True if confirmation is received within timeout, False otherwise.
+        """
+        start_time = time.monotonic()
+        timeout = self.wait_timeout  # Use the configured timeout
+        expected_id = expected_report_id
+
+        print(f"--- Awaiting Confirmation for Report ID {expected_id}...")
+
+        while time.monotonic() - start_time < timeout:
+            # Check if the dispatcher has set the confirmation state flag
+            if self._confirmation_state.get(expected_id):
+                # print(
+                #     f"+++ Success: Confirmed receipt and processing of Report ID
+                #    {expected_id}. +++")
+                return True
+
+
+    """
     Report message handlers
-    '''
+    """
 
     async def _report_loop_data(self, data):
         """
